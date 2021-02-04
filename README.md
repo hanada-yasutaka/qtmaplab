@@ -1,4 +1,4 @@
-# qmapix
+# qtmaplab
 
 nothing here to see yet.
 
