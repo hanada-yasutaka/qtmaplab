@@ -11,11 +11,12 @@ classdef StateTest < matlab.unittest.TestCase
             %obj.TestFigure = figure;
             dim = randi([10 100], 1);
             r = randi([0 1], 1);
-            if r
-                domain = [-5 5; -2 5];
-            else
+            try 
                 domain = mp('[0 5; -2 5]');
+            catch
+                domain = [-5 5; -2 5];
             end
+
             basis = 'q';
 
             scl=SystemInfo(dim, domain, basis);
