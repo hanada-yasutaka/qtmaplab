@@ -1,17 +1,11 @@
-classdef FundamentalState < matlab.mixin.SetGet
+classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
+    % FundamentalState is a class of a 1-dim. wavefunction with position $q$ and
+    % momentum $p$ representations.
+    %
     properties (SetAccess = protected)
-        dim {mustBeInteger, mustBePositive};
-        domain(2,2) {mustBeReal} = [0,0; 0,0];
-        hbar {mustBeReal};
-        q {mustBeNumeric};
-        p {mustBeNumeric};  
-        basis {mustBeMember(basis,{'q','p'})} = 'q';
-        eps {mustBeNumeric};
-        twopi {mustBeNumeric};
-        system;
-        eigenvalue {mustBeNumeric};
-        y (:,1) {mustBeNumeric} = [];
-        periodic {mustBeNumericOrLogical} = true;
+        system % instance of the class SystemInfo
+        eigenvalue {mustBeNumeric} = NaN % eigenvalue data
+        y (:,1) {mustBeNumeric} = [] % state vector data
     end
     
     properties (Access = private)
@@ -23,17 +17,9 @@ classdef FundamentalState < matlab.mixin.SetGet
             if ~isa(system, 'SystemInfo')
                 error("scl must be SystemInfo class")
             end
-            %obj@SystemInfo(scl.dim, scl.domain, scl.basis)     
+            obj@SystemInfo(system.dim, system.domain, system.basis)     
             obj.system = system;
-            
-            props = properties(system);
-            for i = 1:length(props)
-                p = get(system, props{i});
-                if isprop(obj, props{i})
-                    set(obj, props{i}, p);
-                end
-            end
-            
+                        
             if exist('vec', 'var')
                 obj.y = vec;
             end
@@ -42,9 +28,17 @@ classdef FundamentalState < matlab.mixin.SetGet
             end
         end
         
-        function y = toarray(obj)
-            obj.y
+        function obj = tostate(obj, vec)
+            % convert to array data to state 
+            obj = FundamentalState(obj.system, vec);
         end
+        
+        function obj = double(obj)
+            % truncate to double 
+            scl = SystemInfo(obj.dim, double(obj.domain), obj.basis);
+            obj = FundamentalState(scl, double(obj.y));            
+        end
+        
                 
         function y = q2p(obj)
             y = 1;
@@ -54,16 +48,6 @@ classdef FundamentalState < matlab.mixin.SetGet
             y = 1;
         end
         
- 
-       function obj = double(obj)
-            scl = SystemInfo(obj.dim, double(obj.domain), obj.basis);
-            obj = FundamentalState(scl, double(obj.y));            
-        end
-         
-        function y = zeros(obj)
-            data = zeros(1, obj.dim, class(obj.domain));
-            y = FundamentalState(obj.system, data);
-        end
         
         function y = abs2(obj)
             y = abs( obj.y .* conj(obj.y) );
@@ -73,23 +57,61 @@ classdef FundamentalState < matlab.mixin.SetGet
            y = norm( obj.y );
         end
         
+        function display(obj)
+            display(obj.y)
+        end
+        
+        function disp(obj)
+            disp(obj.y);
+        end
+        
+        function obj = times(x, y)
+            % reutnr < x | y >
+            z = inner(x, y)
+            obj = FundamentalState(x.system, z);            
+        end
+        
+        function obj = plus(x, y)
+            if strcmp( class(y), 'FundamentalState')
+                y = y.y;
+            end
+            z = x.y + y;
+            obj = FundamentalState(x.system, z);            
+        end
+        
+        function obj = minus(x, y)
+            if strcmp( class(y), 'FundamentalState')
+                y = y.y;
+            end
+            z = x.y - y;
+            obj = FundamentalState(x.system, z);                        
+        end
+            
+        
         function z = inner(x, y)
             % return < x | y >
-            xx = x.data;
             if strcmp( class(y), 'FundamentalState')
-                y = y.data;
+                y = y.y;
             elseif size(xx) ~= size(yy)
                 error("size must be same");
             end
             % dot(x, y) = abs2( sum( conj(x) .* y) )
-            z = dot(xx , y);
+            z = dot(x.y , y);
         end
+        
+        
         
         function obj = normalize(obj)
             x = obj.y;
             a = dot(x, x);
             obj = FundamentalState(obj.system, x/sqrt(a) );
         end
+        
+        function y = zeros(obj)
+            data = zeros(1, obj.dim, class(obj.domain));
+            y = FundamentalState(obj.system, data);
+        end
+
         
         function obj = coherent(obj, qc, pc, periodic)
             arguments
@@ -143,6 +165,7 @@ classdef FundamentalState < matlab.mixin.SetGet
             end
         end
         
+
         
         function obj = delta(obj)
             
