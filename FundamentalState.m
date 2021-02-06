@@ -232,7 +232,9 @@ function y = csp(x, hbar, qdomain, qc, pc, partition)
   end
 end
 
-
+function y = abs2(x)
+  y = abs( conj(x) .* x);
+end 
    
     
 
