@@ -1,19 +1,19 @@
 classdef SystemInfo < matlab.mixin.SetGet
-    %SCALEINFO このクラスの概要をここに記述
-    % define a domain of system
+    % SystemInfo the domain of the system
     
     properties (SetAccess = protected)
-        dim {mustBeInteger, mustBePositive};
-        domain(2,2) {mustBeReal} = [0,0; 0,0];
-        hbar {mustBeReal};
-        q {mustBeNumeric};
-        p {mustBeNumeric};
-        eps {mustBeNumeric};
-        pi {mustBeNumeric};
-        twopi {mustBeNumeric};
-        basis {mustBeMember(basis,{'q','p'})} = 'p';
-        stype = '';
-        dtype {mustBeMember(dtype,{'mp','double'})} = 'double';
+        dim {mustBeInteger, mustBePositive} % HilbertSpace
+        domain(2,2) {mustBeReal} = [0,0; 0,0] % domain of phase space: must be [qmin, qmax; pmin, pmax]
+        hbar {mustBeReal} % effective Planck constant / (2*pi)
+        basis {mustBeMember(basis,{'q','p'})} = 'p' % basis (representation) of wavefunction         
+        q {mustBeNumeric} % position coordinate
+        p {mustBeNumeric} % momentum coordinate
+        eps {mustBeNumeric} % machine epsilon
+        pi {mustBeNumeric}
+        twopi {mustBeNumeric}
+        stype = '' % system type such as  'Hamiltonian', 'Unitary' ...
+        dtype {mustBeMember(dtype,{'mp','double'})} = 'double' % data type: 'double' or 'mp'
+        periodic {mustBeNumericOrLogical} = true; % coordinate is periodic or not
     end
     
     methods
