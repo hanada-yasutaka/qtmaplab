@@ -5,6 +5,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
     properties (SetAccess = protected)
         system % instance of the class SystemInfo
         eigenvalue {mustBeNumeric} = NaN % eigenvalue data
+        x (:,1) {mustBeNumeric} = [] % coordinate vector
         y (:,1) {mustBeNumeric} = [] % <x|¥psi> where x is $q$ or $p$
     end
     
@@ -16,6 +17,14 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             end
             obj@SystemInfo(system.dim, system.domain, system.basis)     
             obj.system = system;
+            
+            if strcmp(obj.basis, 'q')
+                obj.x = transpose(obj.q);
+            elseif strcmp(obj.basis, 'p')
+                obj.x = transpose(obj.p);
+            else
+                error("basis must be 'q' or 'p'")
+            end
                         
             if exist('vec', 'var')
                 obj.y = vec;
@@ -51,7 +60,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         
         function y = norm(obj)
             % overload built-in norm function to  <¥psi|¥psi>
-            y = norm( obj.y );
+            y = norm(obj.y);
         end
         
         function display(obj)
@@ -65,30 +74,29 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         end
         
         function obj = times(v1, v2)
-            % overload built-in times ( .* ) function to <v1|v2>
+            % definition of the built-in times ( .* ) function to <v1|v2>
             z = inner(v1, v2)
             obj = FundamentalState(v1.system, z);            
         end
         
         function obj = plus(v1, v2)
-            % overload built-in plus ( + ) function to |v1> + |v2>
+            % definition of the built-in plus ( + ) function to |v1> + |v2>
             if strcmp(class(v2), 'FundamentalState')
                 v2 = v2.y;
             end
             v3 = v1.y + v2;
-            obj = FundamentalState(x.system, v3);
+            obj = FundamentalState(v1.system, v3);
         end
         
         function obj = minus(v1, v2)
-            % overload built-in minus ( - ) function to |v1> - |v2>            
-            if strcmp( class(v2), 'FundamentalState')
+            % definition of the built-in minus ( - ) function to |v1> - |v2>            
+            if strcmp(class(v2), 'FundamentalState')
                 v2 = v2.y;
             end
             v3 = v1.y - v2;
-            obj = FundamentalState(x.system, v3);
+            obj = FundamentalState(v1.system, v3);
         end
             
-        
         function v3 = inner(v1, v2)
             % return < v1 | v2 >
             if strcmp( class(v2), 'FundamentalState')
@@ -106,9 +114,9 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             obj = FundamentalState(obj.system, v/sqrt(a) );
         end
         
-        function y = zeros(obj)
+        function state = zeros(obj)
             v = zeros(1, obj.dim, class(obj.domain));
-            y = FundamentalState(obj.system, v);
+            state = FundamentalState(obj.system, v);
         end
         
         function obj = coherent(obj, qc, pc, periodic)
@@ -163,11 +171,22 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             end
         end
         
-
         
-        function obj = delta(obj)
-            
-            obj.y=1;
+        function state = delta(obj, xc, verbose)
+            arguments
+                obj
+                xc {mustBeNumeric} % psi(x) = 1 if x == xc else 0 
+                verbose {mustBeNumericOrLogical} = true
+            end
+            [~, min_ind] = min( abs(obj.x - xc) );
+            v = zeros(1, obj.dim, class(obj.domain));
+            v(min_ind) = 1;
+            disp(obj.x(min_ind))
+            disp(min_ind);
+            if verbose
+                fprintf("setting value: x = %f", obj.x(min_ind));
+            end
+            state = FundamentalState(obj.system, v);
         end
         
         

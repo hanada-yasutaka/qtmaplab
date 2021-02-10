@@ -1,3 +1,4 @@
+clear all
 %addpath("/nfs/AdvanpixMCT-4.8.3.14440/");
 addpath("/Users/hanada/Documents/MATLAB/qtmaplab/");
 
