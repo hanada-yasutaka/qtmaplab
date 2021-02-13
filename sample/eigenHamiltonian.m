@@ -1,6 +1,6 @@
 clear all
 %addpath("/nfs/AdvanpixMCT-4.8.3.14440/");
-addpath("/Users/hanada/Documents/MATLAB/qtmaplab/");
+%addpath("/Users/hanada/Documents/MATLAB/qtmaplab/");
 
 dim = 50;
 domain = [-pi pi; -pi pi];

@@ -16,7 +16,7 @@ classdef SplitHamiltonian < matlab.mixin.SetGet
     
     methods
         function obj = SplitHamiltonian(dim, domain, basis)
-            obj.system = SystemInfo(dim, domain, basis, class(obj));
+            obj.system = SystemInfo(dim, domain, class(obj));
             obj.state = FundamentalState(obj.system);
 
             props = properties(obj.system);

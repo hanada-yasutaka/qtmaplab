@@ -5,7 +5,7 @@ classdef SystemInfo < matlab.mixin.SetGet
         dim {mustBeInteger, mustBePositive} % HilbertSpace
         domain(2,2) {mustBeReal} = [0,0; 0,0] % domain of phase space: must be [qmin, qmax; pmin, pmax]
         hbar {mustBeReal} % effective Planck constant / (2*pi)
-        basis {mustBeMember(basis,{'q','p'})} = 'p' % basis (representation) of wavefunction         
+        %basis {mustBeMember(basis,{'q','p'})} = 'p' % basis (representation) of wavefunction         
         q {mustBeNumeric} % position coordinate
         p {mustBeNumeric} % momentum coordinate
         eps {mustBeNumeric} % machine epsilon
@@ -17,7 +17,7 @@ classdef SystemInfo < matlab.mixin.SetGet
     end
     
     methods
-        function obj = SystemInfo(dim, domain, basis, stype)
+        function obj = SystemInfo(dim, domain, stype)
             
             assert(domain(1,2) > domain(1,1), 'domain(1,1) >= domain(1,2)');
             assert(domain(2,2) > domain(2,1), 'domain(2,1) >= domain(2,2)');
@@ -36,7 +36,7 @@ classdef SystemInfo < matlab.mixin.SetGet
             obj.dim = dim;
             obj.domain = domain;
             obj.twopi = twopi;
-            obj.basis = basis;
+            %obj.basis = basis;
             obj.dtype = class(domain);
             
             if exist('stype', 'var')
@@ -55,14 +55,6 @@ classdef SystemInfo < matlab.mixin.SetGet
         end
         
         
-        function bool = isfftshift(basis)
-            if basis == 'q'
-                bool = true;
-            else
-                bool = true;
-            end
-            
-        end
     end
 end
 
