@@ -3,33 +3,34 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
     % momentum $p$ representations.
     %
     properties (SetAccess = protected)
+        system % instance of the class SystemInfo        
         basis {mustBeMember(basis,{'q','p'})} = 'p' % basis (representation) of wavefunction                 
-        system % instance of the class SystemInfo
-        eigenvalue {mustBeNumeric} = NaN % eigenvalue data
-        x
+        x % coordinate: $q$ or $p$
         y (:,1) {mustBeNumeric} = [] % <x|¥psi> where x is $q$ or $p$
+        eigenvalue {mustBeNumeric} = NaN % eigenvalue data        
     end
     
     
     methods
-        function obj = FundamentalState(system, vec, basis, eigenvalue)
+        function obj = FundamentalState(system, basis, vec, eigenvalue)
             if ~isa(system, 'SystemInfo')
                 error("scl must be SystemInfo class")
             end
             
             obj@SystemInfo(system.dim, system.domain)     
             obj.system = system;
-                        
+            
+            obj.basis = basis;            
+            
+            if strcmp(basis, 'q')
+                obj.x = obj.q;
+            elseif strcmp(basis, 'p')
+                obj.x = obj.p;
+            end
+                                    
             if exist('vec', 'var')
                 obj.y = vec;
-                obj.basis = basis;
-                if strcmp(basis, 'q')
-                    obj.x = obj.q;
-                elseif strcmp(basis, 'p')
-                    obj.x = obj.p;
-                end                
             end
-                            
             
             if exist('eigenvalue', 'var')
                 obj.eigenvalue = eigenvalue;
@@ -38,23 +39,33 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         
         function obj = tostate(obj, vec)
             % convert to vector array to state             
-            obj = FundamentalState(obj.system, vec, obj.basis);
+            obj = FundamentalState(obj.system, obj.basis, vec);
         end
         
         function obj = double(obj)
             % truncate to double 
             system = SystemInfo(obj.dim, double(obj.domain) );
-            obj = FundamentalState(system, double(obj.y), obj.basis);            
+            obj = FundamentalState(system, obj.basis, double(obj.y));            
         end
         
         function obj = q2p(obj)
-            vec = fft(obj.y);
-            obj = FundamentalState(obj.system, vec/sqrt(obj.dim), 'p' );
+            assert( strcmp(obj.basis, 'q'), 'the state basis is not "q"');
+            if obj.shift(1)
+                vec = fftshift( fft(obj.y) );
+            else
+                vec = fft(obj.y);
+            end
+            obj = FundamentalState(obj.system, 'p', vec/sqrt(obj.dim));
         end
         
         function obj = p2q(obj)
-            vec = ifft(obj.y);
-            obj = FundamentalState(obj.system, vec/sqrt(obj.dim), 'q');
+            assert( strcmp(obj.basis, 'p'), 'the state basis is not "q"');            
+            if obj.shift(2)
+                vec = ifft( fftshift(obj.y) );
+            else
+                vec = ifft(obj.y);
+            end
+            obj = FundamentalState(obj.system, 'q', vec/sqrt(obj.dim));
         end
         
         function y = abs2(obj)
@@ -81,7 +92,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             % overload built-in times ( .* ) function to <v1|v2>
             basisconsistency(v1, v2);            
             z = inner(v1, v2);
-            obj = FundamentalState(v1.system, z, v1.basis);            
+            obj = FundamentalState(v1.system, v1.basis, z);
         end
         
         function obj = plus(v1, v2)
@@ -91,7 +102,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                 v2 = v2.y;
             end
             v3 = v1.y + v2;
-            obj = FundamentalState(x.system, v3, v1.basis);
+            obj = FundamentalState(x.system, v1.basis, v3);
         end
         
         function obj = minus(v1, v2)
@@ -101,7 +112,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                 v2 = v2.y;
             end
             v3 = v1.y - v2;
-            obj = FundamentalState(x.system, v3, v1.basis);
+            obj = FundamentalState(x.system, v1.basis, v3);
         end
             
         
@@ -119,13 +130,9 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         function obj = normalize(obj)
             v = obj.y;
             a = dot(v, v);
-            obj = FundamentalState(obj.system, v/sqrt(a), obj.basis);
+            obj = FundamentalState(obj.system, obj.basis, v/sqrt(a));
         end
         
-        function y = zeros(obj)
-            v = zeros(1, obj.dim, class(obj.domain));
-            y = FundamentalState(obj.system, v, obj.basis);
-        end
         
         function obj = coherent(obj, qc, pc, periodic)
             arguments
@@ -138,16 +145,15 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             if periodic
                 v = csp(obj.q, obj.hbar, obj.domain(1,:), qc, pc, 5);
                 a = dot(v, v);
-                obj = FundamentalState(obj.system, v / sqrt(a), 'q');
+                obj = FundamentalState(obj.system, 'q', v / sqrt(a));
             elseif ~periodic
                 v = cs(obj.q, obj.hbar, qc, pc);
                 a = dot(v, v);
-                obj = FundamentalState(obj.system, v / sqrt(a), 'q');
+                obj = FundamentalState(obj.system, 'q', v / sqrt(a));
                 obj.periodic = false;
             else
                 error("periodic must be true/false");
             end
-            
         end
                 
         function [X, Y, mat] = hsmrep(obj, gridnum, range)
@@ -156,7 +162,14 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                 gridnum {mustBeInteger, mustBePositive} = 50;                
                 range {mustBeReal} = [obj.domain(1,1) obj.domain(1,2); obj.domain(2,1), obj.domain(2,2)];
             end
-            v = obj.y;
+            
+            if strcmp(obj.basis, 'q')
+                v = obj.y;
+            elseif strcmp(obj.basis, 'p')
+                vec = obj.p2q();
+                v = vec.y;
+            end
+            
             x = transpose(obj.q);
             qc = linspace(obj.domain(1,1), obj.domain(1,2), gridnum);
             pc = linspace(obj.domain(2,1), obj.domain(2,2), gridnum);
@@ -174,16 +187,30 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                     cs = transpose( csfun(qc(j), pc(i)) );
                     % dot(c, v) = abs2( sum( conj(c) .* v) )
                     mat(i,j) = abs2( dot(cs, v) );
-
                 end
             end
         end
         
-
+        %function obj = zeros(obj)
+        %    y = zeros(obj.dim, class(obj.domain) );
+        %%    obj = FundamentalState(obj.system, obj.basis, y);
+        %end
         
-        function obj = delta(obj)
+        function obj = delta(obj, xc, verbose)
+            arguments
+                obj
+                xc
+                verbose {mustBeNumericOrLogical} = true;
+            end
             
-            obj.y=1;
+            [~, ind] = min( abs(obj.x - xc) );
+            y = zeros(obj.dim, 1, class(obj.domain) );
+            y(ind) = 1;
+            
+            if verbose
+                fprintf("set xc = %f (index = %d)\n", obj.x(ind), ind );
+            end
+            obj = FundamentalState(obj.system, obj.basis, y);            
         end
         
         

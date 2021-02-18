@@ -13,7 +13,8 @@ classdef SystemInfo < matlab.mixin.SetGet
         twopi {mustBeNumeric}
         stype = '' % system type such as  'Hamiltonian', 'Unitary' ...
         dtype {mustBeMember(dtype,{'mp','double'})} = 'double' % data type: 'double' or 'mp'
-        periodic {mustBeNumericOrLogical} = true; % coordinate is periodic or not
+        periodic {mustBeNumericOrLogical} = true % coordinate is periodic or not
+        shift = [false false]
     end
     
     methods
@@ -21,6 +22,24 @@ classdef SystemInfo < matlab.mixin.SetGet
             
             assert(domain(1,2) > domain(1,1), 'domain(1,1) >= domain(1,2)');
             assert(domain(2,2) > domain(2,1), 'domain(2,1) >= domain(2,2)');
+            
+            if (domain(1,1) == 0) || (domain(1,2) == 0)
+                obj.shift(1) = false;
+            elseif abs( domain(1,1)) == abs(domain(1,2) )
+                obj.shift(1) = true;
+            else
+                error('non-symmetric domain is not supported yet');
+            end
+            
+            if (domain(2,1) == 0) || (domain(2,2) == 0)
+                obj.shift(2) = false;
+            elseif abs(domain(2,1)) == abs(domain(2,2))
+                obj.shift(2) = true;
+            else
+                error('non-symmetric domain is not supported yet');
+            end
+            
+
             
             if class(domain) == "double"
                 twopi = 2*pi;

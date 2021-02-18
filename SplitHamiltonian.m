@@ -1,47 +1,16 @@
-classdef SplitHamiltonian < matlab.mixin.SetGet
+classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
     properties (SetAccess = protected)
-        dim {mustBeInteger, mustBePositive};
-        domain(2,2) {mustBeReal} = [0,0; 0,0];
-        hbar {mustBeReal};
-        q {mustBeNumeric};
-        p {mustBeNumeric};       
         basis {mustBeMember(basis,{'q','p'})} = 'p';
-        eps {mustBeNumeric};
         tau {mustBeNumeric} = 1;
         funcT;
         funcV;
-        system;
-        state;
     end
     
     methods
         function obj = SplitHamiltonian(dim, domain, basis)
-            obj.system = SystemInfo(dim, domain, class(obj));
-            obj.state = FundamentalState(obj.system);
-
-            props = properties(obj.system);
-            for i = 1:length(props)
-                p = get(obj.system, props{i});
-                if isprop(obj, props{i})
-                    set(obj, props{i}, p);
-                end
-            end
+            obj@SystemInfo(dim, domain, 'SplitHamiltonian');
+            obj.basis = basis;
         end    
-%     properties
-%         dim {mustBeInteger, mustBePositive};
-%         domain(2,2) {mustBeReal} = [0,0; 0,0];
-%         hbar {mustBeReal};
-%         q {mustBeNumeric};
-%         p {mustBeNumeric};       
-%         basis {mustBeMember(basis,{'q','p'})} = 'p';
-%         eps {mustBeNumeric};
-%     end
-%     
-%     methods
-%         function obj = SplitHamiltonian(dim, domain, basis)
-%             obj.basis = basis;
-%             obj = scaleinfo(obj, dim, domain);
-%         end
         
         function mat = matT(obj, funcT)
             % return <x|T(p)|x> where x = 'q' or 'p'
@@ -127,19 +96,27 @@ classdef SplitHamiltonian < matlab.mixin.SetGet
         
         
         function state = nullstate(obj)
-            data = zeros(1, obj.dim, class(obj.domain));
-            state = FundamentalState(obj.dim, obj.domain, obj.basis, data)
+            system = SystemInfo(obj.dim, obj.domain, class(obj) );            
+            y = zeros(1, obj.dim, class(obj.domain));
+            state = FundamentalState(system, obj.basis, y);            
+        end
+        
+        function state = vec2state(obj, data)
+            system = SystemInfo(obj.dim, obj.domain, class(obj) );            
+            state = FundamentalState(system, obj.basis, data);                        
         end
         
         function states = eigs2states(obj, evals, evecs)
             states = [];
             dim = obj.dim;
+            system = SystemInfo(obj.dim, obj.domain, class(obj) );
+            
             if isequal( size(evals), [dim dim] )
                 evals = diag(evals);
             end
             
             for i = 1:dim
-                stat = FundamentalState(obj.system, evecs(:, i), evals(i));
+                stat = FundamentalState(system, obj.basis, evecs(:, i), evals(i) );
                 states = [states; stat];
             end
         end

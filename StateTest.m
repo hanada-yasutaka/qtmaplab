@@ -19,8 +19,8 @@ classdef StateTest < matlab.unittest.TestCase
 
             basis = 'q';
 
-            scl=SystemInfo(dim, domain, basis);
-            obj.state = FundamentalState(scl);
+            scl=SystemInfo(dim, domain);
+            obj.state = FundamentalState(scl, basis);
         end
     end
  
