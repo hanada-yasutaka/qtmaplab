@@ -1,46 +1,65 @@
-classdef SplitUnitary  < matlab.mixin.SetGet
+classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
     %SplitUnitary このクラスの概要をここに記述
     %   詳細説明をここに記述
     properties (SetAccess = protected)
-        dim {mustBeInteger, mustBePositive};
-        domain(2,2) {mustBeReal} = [0,0; 0,0];
-        hbar {mustBeReal};
-        q {mustBeNumeric};
-        p {mustBeNumeric};       
+        %dim {mustBeInteger, mustBePositive};
+        %domain(2,2) {mustBeReal} = [0,0; 0,0];
+        %hbar {mustBeReal};
+        %q {mustBeNumeric};
+        %p {mustBeNumeric};       
         basis {mustBeMember(basis,{'q','p'})} = 'p';
-        eps {mustBeNumeric};
+        %eps {mustBeNumeric};
         tau {mustBeNumeric} = 1;
         funcT;
         funcV;
-        system;
-        state;
+        %system;
+        %state;
     end
     
     methods
         function obj = SplitUnitary(dim, domain, basis)
-            obj.system = SystemInfo(dim, domain, basis, class(obj));
-            obj.state = FundamentalState(obj.system);
-            
-
-            props = properties(obj.system);
-            for i = 1:length(props)
-                p = get(obj.system, props{i});
-                if isprop(obj, props{i})
-                    set(obj, props{i}, p);
-                end
+            obj@SystemInfo(dim, domain, 'SplitUnitary');
+            obj.basis = basis;
+        end
+        
+        function qmat = expTV(obj, funcT, funcV, tau)
+            % return <q'|exp(-i/hbar *funcT(p)*tau) exp(-i/hbar*funcV(q)*tau)|q>            
+            arguments
+                obj
+                funcT
+                funcV
+                tau = 1
             end
                         
-            %obj = scaleinfo(obj, dim, domain);
-            %obj.basis = basis;
+            if obj.isfftshift(2)
+                p = fftshift(obj.p);
+            else
+                p = obj.p;
+            end
+            
+            if strcmp(obj.basis, 'q')
+                qvecs = diag( ones(1, obj.dim, class(obj.domain) ) );
+            elseif
+                pvecs = diag( ones(1, obj.dim, class(obj.domain) ) );
+                qvecs = ifft(pvecs)/sqrt(obj.dim);
+            end
+            
+            qvecs = exp( -1j * funcV(obj.q) * tau / obj.hbar ) .* qvecs;
+            pvecs = transpose( exp( -1j * funcT(p) * tau / obj.hbar ) ) .* fft( qvecs );
+            qmat = ifft(pvecs);
         end
         
-        function y = nullstate(obj)
-            y = FundamentalState(obj.system);
+        function expVT(obj, funcT, funcV)
+            
         end
         
-        function y = systeminfo(obj)
-            y = obj.system
-        end
+        %function y = nullstate(obj)
+        %    y = FundamentalState(obj.system);
+        %end
+        
+        %function y = systeminfo(obj)
+        %    y = obj.system
+        %end
         
         function op = evolutionOP(obj)
             op = @(x) EvolveTV(x);
