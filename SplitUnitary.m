@@ -2,18 +2,10 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
     %SplitUnitary このクラスの概要をここに記述
     %   詳細説明をここに記述
     properties (SetAccess = protected)
-        %dim {mustBeInteger, mustBePositive};
-        %domain(2,2) {mustBeReal} = [0,0; 0,0];
-        %hbar {mustBeReal};
-        %q {mustBeNumeric};
-        %p {mustBeNumeric};       
         basis {mustBeMember(basis,{'q','p'})} = 'p';
-        %eps {mustBeNumeric};
         tau {mustBeNumeric} = 1;
         funcT;
         funcV;
-        %system;
-        %state;
     end
     
     methods
@@ -22,8 +14,46 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             obj.basis = basis;
         end
         
-        function qmat = expTV(obj, funcT, funcV, tau)
-            % return <q'|exp(-i/hbar *funcT(p)*tau) exp(-i/hbar*funcV(q)*tau)|q>            
+        function op = op_expT(obj, funcT, tau, isvec)
+            arguments
+                obj
+                funcT
+                tau = 1
+                isvec = true
+            end
+
+            if strcmp(obj.basis, 'q') & obj.isfftshift(2)
+                x = fftshift(obj.p);
+            else
+                x = obj.p;
+            end
+
+            
+            if isvec
+                op = @(invec) exp( -1j * funcT(x) * tau /obj.hbar) .* invec;
+            else
+                op = @(invec) transpose( exp( -1j * funcT(x) * tau /obj.hbar) )  .* invec;
+            end
+        end
+        
+        function op = op_expV(obj, funcV, tau, isvec)
+            arguments
+                obj
+                funcV
+                tau = 1
+                isvec = true;
+            end
+            
+            x = obj.q;
+            
+            if isvec
+                op = @(invec) exp( -1j * funcV(x) * tau / obj.hbar) .* invec;
+            else
+                op = @(invec) transpose(exp( -1j * funcV(x) * tau / obj.hbar) ) .* invec;
+            end
+        end
+                
+        function mat = mat_expTV(obj, funcT, funcV, tau)
             arguments
                 obj
                 funcT
@@ -31,27 +61,157 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
                 tau = 1
             end
                         
-            if obj.isfftshift(2)
-                p = fftshift(obj.p);
-            else
-                p = obj.p;
+            expT = op_expT(obj, funcT, tau, false);
+            expV = op_expV(obj, funcV, tau, false);
+            
+            iden = diag( ones(1, obj.dim, class(obj.domain) ) );
+            if strcmp(obj.basis, 'p')                              
+                iden = ifft(iden);
             end
+            
+            pvecs = fft( expV(iden ) );
+            mat  = expT(pvecs);
             
             if strcmp(obj.basis, 'q')
-                qvecs = diag( ones(1, obj.dim, class(obj.domain) ) );
-            elseif
-                pvecs = diag( ones(1, obj.dim, class(obj.domain) ) );
-                qvecs = ifft(pvecs)/sqrt(obj.dim);
-            end
-            
-            qvecs = exp( -1j * funcV(obj.q) * tau / obj.hbar ) .* qvecs;
-            pvecs = transpose( exp( -1j * funcT(p) * tau / obj.hbar ) ) .* fft( qvecs );
-            qmat = ifft(pvecs);
+                mat = fft(mat);
+            end                        
         end
         
-        function expVT(obj, funcT, funcV)
+        function mat = mat_expVT(obj, funcT, funcV, tau)
+            arguments
+                obj
+                funcT
+                funcV
+                tau = 1
+            end
+                        
+            expT = op_expT(obj, funcT, tau, false);
+            expV = op_expV(obj, funcV, tau, false);
             
+            iden = diag( ones(1, obj.dim, class(obj.domain) ) );
+            if strcmp(obj.basis, 'q')                              
+                iden = fft(iden);
+            end
+            
+            pvecs = ifft( expT(iden ) );
+            mat  = expV(pvecs);
+            
+            if strcmp(obj.basis, 'p')
+                mat = fft(mat);
+            end    
         end
+        
+        function mat = mat_expVTV(obj, funcT, funcV, tau)
+            arguments
+                obj
+                funcT
+                funcV
+                tau = 1
+            end
+                        
+            expT = op_expT(obj, funcT, tau, false);
+            expV = op_expV(obj, funcV, tau/2, false);
+            
+            iden = diag( ones(1, obj.dim, class(obj.domain) ) );
+            if strcmp(obj.basis, 'p')
+                iden = ifft(iden);
+            end
+            
+            pvecs =  fft( expV(iden ) );
+            qvecs = ifft( expT(pvecs) );
+            mat   =  fft( expV(qvecs) );
+            
+            if strcmp(obj.basis, 'q')
+                mat = ifft(mat);
+            end                        
+
+        end
+        
+        function mat = mat_expTVT(obj, funcT, funcV, tau)
+            arguments
+                obj
+                funcT
+                funcV
+                tau = 1
+            end
+                        
+            expT = op_expT(obj, funcT, tau/2, false);
+            expV = op_expV(obj, funcV, tau, false);
+            
+            iden = diag( ones(1, obj.dim, class(obj.domain) ) );
+            if strcmp(obj.basis, 'q')
+                iden = fft(iden);
+            end
+            
+            qvecs =  ifft( expT(iden ) );
+            pvecs =  fft ( expV(qvecs) );
+            mat   =  ifft( expT(pvecs) );
+            
+            if strcmp(obj.basis, 'p')
+                mat = fft(mat);
+            end                        
+
+        end
+        
+        
+        
+       
+            
+        
+%         function mat = expTV(obj, funcT, funcV, tau)
+%             % return <q'|exp(-i/hbar *funcT(p)*tau) exp(-i/hbar*funcV(q)*tau)|q>            
+%             arguments
+%                 obj
+%                 funcT
+%                 funcV
+%                 tau = 1
+%             end
+%                         
+%             if obj.isfftshift(2)
+%                 p = fftshift(obj.p);
+%             else
+%                 p = obj.p;
+%             end
+%             
+%             if strcmp(obj.basis, 'q')
+%                 qvecs = diag( ones(1, obj.dim, class(obj.domain) ) );
+%             else
+%                 pvecs = diag( ones(1, obj.dim, class(obj.domain) ) );
+%                 %qvecs = ifft(pvecs)/sqrt(obj.dim);
+%                 qvecs = pvecs;
+%             end
+%             
+%             qvecs = exp( -1j * funcV(obj.q) * tau / obj.hbar ) .* qvecs;
+%             mat = transpose( exp( -1j * funcT(p) * tau / obj.hbar ) ) .* fft( qvecs ) / sqrt(obj.dim);
+%             
+%             if strcmp(obj.basis, 'q')
+%                 mat = ifft(mat) / sqrt(obj.dim);
+%             end
+%         end
+%         
+%         function mat = expVT(obj, funcT, funcV, tau)
+%             arguments
+%                 obj
+%                 funcT
+%                 funcV
+%                 tau = 1
+%             end
+%                         
+%             if obj.isfftshift(2)
+%                 q = fftshift(obj.q);
+%             else
+%                 q = obj.q;
+%             end
+%             
+%             idmat = diag( ones(1, obj.dim, class(obj.domain) ) );
+%             idmat = fft(idmat);
+%             pvecs = exp( -1j * funcT(obj.p) * tau / obj.hbar ) .* idmat;
+%             mat = transpose( exp( -1j * funcV(obj.q) * tau / obj.hbar ) ) .* ifft( pvecs ) / sqrt(obj.dim);
+%             
+%             if strcmp(obj.basis, 'p')
+%                 mat = fft(mat) / sqrt(obj.dim);
+%             end
+%         end
         
         %function y = nullstate(obj)
         %    y = FundamentalState(obj.system);
@@ -136,6 +296,24 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             if obj.basis == 'q'
                 invec = q2p(invec);
             end                                    
+        end
+        
+        function index = sort(obj, targetmat, refmat)
+            mat = conj(targetmat).' * refmat;
+            mat2 = conj(mat) .* mat;
+            
+            qnumber = 1:obj.dim;
+            index = [];
+            for i=1:obj.dim
+                [ovl, ind] = max(mat2(:,i));
+                index = [index, qnumber(ind)];
+                qnumber(ind) = [];
+                mat2(ind,:) = [];
+            end
+
+            if length(unique(index)) ~= obj.dim
+                error("duplicate sort index ")
+            end
         end
         
         function a = AAA(obj)
