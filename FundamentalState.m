@@ -49,8 +49,8 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         end
         
         function obj = q2p(obj)
-            assert( strcmp(obj.basis, 'q'), 'the state basis is not "q"');
-            if obj.shift(1)
+            assert( strcmp(obj.basis, 'q'), 'basis of this state is not "q"');
+            if obj.isfftshift(1)
                 vec = fftshift( fft(obj.y) );
             else
                 vec = fft(obj.y);
@@ -59,14 +59,32 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         end
         
         function obj = p2q(obj)
-            assert( strcmp(obj.basis, 'p'), 'the state basis is not "q"');            
-            if obj.shift(2)
+            assert( strcmp(obj.basis, 'p'), 'basis of this state is not "q"');            
+            if obj.isfftshift(2)
                 vec = ifft( fftshift(obj.y) );
             else
                 vec = ifft(obj.y);
             end
-            obj = FundamentalState(obj.system, 'q', vec/sqrt(obj.dim));
+            obj = FundamentalState(obj.system, 'q', vec*sqrt(obj.dim));
         end
+        
+        function obj = qrep(obj)
+            if strcmp(obj.basis, 'q')
+                obj = obj;
+            else
+                obj = obj.p2q();
+            end
+        end
+        
+        function obj = prep(obj)
+            if strcmp(obj.basis, 'p')
+                obj = obj;
+            else
+                obj = obj.q2p();
+            end
+        end
+        
+        
         
         function y = abs2(obj)
             % return |<x|psi>|^2
@@ -97,7 +115,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         
         function obj = plus(v1, v2)
             % overload built-in plus ( + ) function to |v1> + |v2>
-            basisconsistency(v1,v2);            
+            basisconsistency(v1, v2);            
             if strcmp(class(v2), 'FundamentalState')
                 v2 = v2.y;
             end
@@ -120,12 +138,24 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             % return < v1 | v2 >
             if strcmp( class(v2), 'FundamentalState')
                 v2 = v2.y;
-            elseif size(v1.y) ~= size(v2.y)
-                error("size must be same");
             end
-            % dot(v1, v2) = abs2( sum( conj(v1) .* v2) )
-            v3 = dot(v1.y , v2);
+            
+            if isvector(v2)
+                %dot(v1, v2) = abs2( sum( conj(v1) .* v2) ) = v1.' * v2               
+                v3 = dot(v1.y, v2);
+            elseif ismatrix(v2)
+                v3 = conj(v1.y).' * v2;
+            else
+                error("v2 must be vector or matrix");
+            end
         end
+        
+        
+        %function v = inners(v1, vecs)
+            % return [<v1 |vecs(1)>, <v1|vecs(2)>, ... ]
+        %    v = transpose( conj(v1.y) ) * vecs
+        %end
+            
         
         function obj = normalize(obj)
             v = obj.y;
@@ -191,10 +221,6 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             end
         end
         
-        %function obj = zeros(obj)
-        %    y = zeros(obj.dim, class(obj.domain) );
-        %%    obj = FundamentalState(obj.system, obj.basis, y);
-        %end
         
         function obj = delta(obj, xc, verbose)
             arguments
@@ -220,31 +246,6 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         function save_eigs()
         end
         
-       %% operator overload
-        
-        %function display(obj)
-        %    display(obj.y);
-        %end
-        
-        %function disp(obj)
-        %    disp(obj.y);
-        %end
-            
-       
-        %function y = plus(obj1, obj2)
-        %    isstate(obj1, obj2);
-        %    data = obj1.data + obj2.data;
-        %    y = FundamentalState(obj1.dim, obj1.domain, obj1.basis, data);
-        %end
-        %
-        %function isstate(obj1, obj2)
-        %    if ~isa(obj1, 'FundamentalState')
-        %        error(sprintf('object must be FundamentalState' ));
-        %    elseif exist('obj2', 'var') && ~isa(obj2, 'FundamentalState')
-        %        error(sprintf('object must be FundamentalState', getobjname(obj1) ));
-        %    end
-        %end
-        %%%        
     end
 end
 

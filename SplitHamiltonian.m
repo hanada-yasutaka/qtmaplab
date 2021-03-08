@@ -1,9 +1,6 @@
 classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
     properties (SetAccess = protected)
         basis {mustBeMember(basis,{'q','p'})} = 'p';
-        tau {mustBeNumeric} = 1;
-        funcT;
-        funcV;
     end
     
     methods
@@ -42,55 +39,38 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
         
         function mat = pBaseMatV(obj, funcV)
             % retun <p'|V(p)|p>  = \sum_q <p'|V(q)|q><q|p>
+
+            %if obj.isfftshift(1)
+            %    x = fftshift(obj.q);
+                %fv = fftshift( funcV(obj.q) );
+            %else
             x = obj.q;
-            mat = zeros(length(x), class(x));
-            for i = 1:length(x)
-                pvec = zeros(1, length(x), class(x));
-                pvec(i) = 1;
-                qvec = ifft(pvec);
-                if x(1)*x(end) < 0
-                    qvec = fftshift(funcV(x)) .* qvec;
-                else
-                    qvec = funcV(x) .* qvec;
-                end
-                mat(:,i) = fft(qvec);
-            end
+                %fv = funcV(obj.q);
+            %end
+            
+            mat = zeros( obj.dim, class(obj.domain));
+            pvecs = diag( ones(1, obj.dim, class(obj.domain) ));
+            %pvecs = transpose( fv ) .* ifft(pvecs);
+            pvecs = transpose( funcV(x) ) .* ifft(pvecs);            
+            mat = fft(pvecs);
         end
         
         function mat = qBaseMatV(obj, funcV)
             % retun <q'|V(p)|q>  = \delta_{q,q'}V(q)
-            x = obj.q;
-            mat = diag(funcV(x));
-        end
-        
-        function mat = qBaseMatT_old(obj, funcT)
-            % retun <q'|T(p)|q>  = \sum_p <q'|T(p)|p><p|q>            
-            x = obj.p;
-            mat = zeros(length(x), class(x));
-            for i = 1:length(x)
-                qvec = zeros(1, length(x), class(x));
-                qvec(i) = 1;
-                
-                pvec = fft(qvec);
-                if x(1)*x(end) < 0
-                    pvec = fftshift(funcT(x)) .* pvec;
-                else
-                    pvec = funcT(x) .* pvec;
-                end
-                mat(:,i) = ifft(pvec);
-            end
+            mat = diag( funcV(obj.q) );
         end
         
         function mat = qBaseMatT(obj, funcT)
-            % retun <q'|T(p)|q>  = \sum_p <q'|T(p)|p><p|q>            
-            x = obj.p;
-            if x(1)*x(end)<0
-                f = @(x) fftshift( funcT(x) );
+            % retun <q'|T(p)|q>  = \sum_p <q'|T(p)|p><p|q>                        
+            if obj.isfftshift(2)
+                %fv = fftshift( funcT(obj.p) );
+                x = fftshift(obj.p);
             else
-                f = @(x) funcT(x);
+                x = obj.p;
+                %fv = funcT(obj.p);
             end
-            qvecs = diag( ones(1, obj.dim, class(x) )); 
-            qvecs = transpose( f(x) ) .* fft(qvecs);
+            qvecs = diag( ones(1, obj.dim, class(obj.domain) )); 
+            qvecs = transpose( funcT(x) ) .* fft(qvecs);
             mat = ifft(qvecs);
         end
         
@@ -106,20 +86,20 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
             state = FundamentalState(system, obj.basis, data);                        
         end
         
-        function states = eigs2states(obj, evals, evecs)
-            states = [];
-            dim = obj.dim;
-            system = SystemInfo(obj.dim, obj.domain, class(obj) );
-            
-            if isequal( size(evals), [dim dim] )
-                evals = diag(evals);
-            end
-            
-            for i = 1:dim
-                stat = FundamentalState(system, obj.basis, evecs(:, i), evals(i) );
-                states = [states; stat];
-            end
-        end
+%         function states = eigs2states(obj, evals, evecs)
+%             states = [];
+%             dim = obj.dim;
+%             system = SystemInfo(obj.dim, obj.domain, class(obj) );
+%             
+%             if isequal( size(evals), [dim dim] )
+%                 evals = diag(evals);
+%             end
+%             
+%             for i = 1:dim
+%                 stat = FundamentalState(system, obj.basis, evecs(:, i), evals(i) );
+%                 states = [states; stat];
+%             end
+%         end
         
         
         
