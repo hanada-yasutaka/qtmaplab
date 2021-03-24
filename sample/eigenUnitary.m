@@ -1,14 +1,29 @@
 clear all
+AdvanpixMCT='AdvanpixMCT-4.8.3.14460/';
 if ismac
     addpath("/Users/hanada/OneDrive/Packages/qtmaplab/");
+    addpath(sprintf("/Users/hanada/Applications/%s",AdvanpixMCT));
 elseif isunix
-    %addpath("/home/hanada/OneDrive/Packages/qtmaplab/");
-    addpath("/nfs/qtmaplab/");
-    addpath("/nfs/AdvanpixMCT-4.8.3.14440/");
+    [~, name] = system('hostname');
+    if strcmp(strtrim(name), 'bohigas')
+        addpath("/home/hanada/OneDrive/Packages/qtmaplab/");
+        addpath(sprintf("/home/hanada/Applications/%s",AdvanpixMCT));        
+    else
+        addpath("/nfs/qtmaplab/");
+        addpath("/nfs/AdvanpixMCT-4.8.3.14440/");
+    end
 end
 
 dim = 50;
-domain = [-pi pi;-pi pi];
+domain = [-pi pi;0 2*pi];
+domain = [0 2*pi;0 2*pi];
+%domain = [-pi pi;-pi pi];
+%domain = [0 2*pi;-pi pi];
+
+%domain = mp('[0 2*pi;0 2*pi]');
+%domain = mp('[-pi pi;-pi pi]');
+%domain = [0 2*pi;0 2*pi];
+%domain = [-pi pi;-pi pi];
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
 sU = SplitUnitary(dim, domain, basis);
@@ -25,7 +40,7 @@ matH = matT + matV;
 hevecs = hevecs(:, sindex);
 hstates= eigs2states(sH, hevecs, hevals);
 
-matU = sU.mat_expVTV(@funcT, @funcV, tau);
+matU = sU.expVTmat(@funcT, @funcV, tau);
 
 [uevecs, uevals] = eig(matU);
 sindex = sortindex(uevecs, hevecs);
@@ -47,7 +62,7 @@ q0 = rand(1, sample)*twopi;
 trajq = [];
 trajp = [];
 for i=1:tmax
-    [q0,p0] = fVTV(q0,p0, k,tau);
+    [q0,p0] = fVT(q0,p0, k,tau);
     q0 = q0 - floor((q0 - pi)/twopi)*twopi - twopi;
     %p0 = p0 - floor((p0 - pi)/twopi)*twopi - twopi;
     %q0 = q0 - floor(q0/twopi)*twopi;

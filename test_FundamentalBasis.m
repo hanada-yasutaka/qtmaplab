@@ -7,7 +7,20 @@ mp.Digits(dps);
 format longG;
 
 dim = 100;
-domain = [-pi pi;-2*pi 2*pi];
+domain = [-pi pi;-2*pi 2*pi];if ismac
+    addpath("/Users/hanada/OneDrive/Packages/qtmaplab/");
+    addpath(sprintf("/home/hanada/Applications/%s",AdvanpixMCT));
+elseif isunix
+    [~, name] = system('hostname');
+    if strcmp(strtrim(name), 'bohigas')
+        addpath("/home/hanada/OneDrive/Packages/qtmaplab/");
+        addpath(sprintf("/home/hanada/Applications/%s",AdvanpixMCT));        
+    else
+        addpath("/nfs/qtmaplab/");
+        addpath("/nfs/AdvanpixMCT-4.8.3.14440/");
+    end
+end
+
 %domain = mp('[-pi pi; -2*pi, 2*pi]');
 basis = 'q';
 H = SplitHamiltonian(dim, domain, basis);

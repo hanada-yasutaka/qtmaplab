@@ -4,10 +4,28 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
     end
     
     methods
-        function obj = SplitHamiltonian(dim, domain, basis)
+        function [obj, state] = SplitHamiltonian(dim, domain, basis)
             obj@SystemInfo(dim, domain, 'SplitHamiltonian');
             obj.basis = basis;
-        end    
+            if strcmp(basis, 'q')
+                fprintf('Worning: basis "q" has not fully tested yet')
+            end
+            state = FundamentalState(obj, obj.basis);            
+        end
+        
+        function state = vec2state(obj, vec, basis)
+            if isrow(vec)
+                vec = vec.';
+            end
+            
+            if ~exist('basis', 'var')
+                basis = obj.basis;
+            end
+
+            sysinfo = SystemInfo(obj.dim, obj.domain, 'SplitHamiltonian');
+            state = FundamentalState(sysinfo, basis, vec);
+        end
+        
         
         function mat = matT(obj, funcT)
             % return <x|T(p)|x> where x = 'q' or 'p'
@@ -51,7 +69,8 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
             mat = zeros( obj.dim, class(obj.domain));
             pvecs = diag( ones(1, obj.dim, class(obj.domain) ));
             %pvecs = transpose( fv ) .* ifft(pvecs);
-            pvecs = transpose( funcV(x) ) .* ifft(pvecs);            
+            %pvecs = transpose( funcV(x) ) .* ifft(pvecs);
+            pvecs = funcV(x) .* ifft(pvecs);            
             mat = fft(pvecs);
         end
         
@@ -70,7 +89,8 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
                 %fv = funcT(obj.p);
             end
             qvecs = diag( ones(1, obj.dim, class(obj.domain) )); 
-            qvecs = transpose( funcT(x) ) .* fft(qvecs);
+            %qvecs = transpose( funcT(x) ) .* fft(qvecs);
+            qvecs = funcT(x)  .* fft(qvecs);
             mat = ifft(qvecs);
         end
         
