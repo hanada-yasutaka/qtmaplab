@@ -1,25 +1,41 @@
 classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
-    %SplitUnitary このクラスの概要をここに記述
-    %   詳細説明をここに記述
+    %SplitUnitary 
+    %solving eigenvalue problem for quantum map ()
     properties (SetAccess = protected)
-        basis {mustBeMember(basis,{'q','p'})} = 'p';
+        basis {mustBeMember(basis,{'p', 'q'})} = 'p'; 
         tau {mustBeNumeric} = 1;
         funcT;
         funcV;
     end
     
     methods
-        function obj = SplitUnitary(dim, domain, basis)
+        function [obj, state] = SplitUnitary(dim, domain, basis)
             obj@SystemInfo(dim, domain, 'SplitUnitary');
             obj.basis = basis;
+            if strcmp(basis, 'q')
+                fprintf('Worning: basis "q" has not fully tested yet')
+            end
+            state = FundamentalState(obj, obj.basis);
         end
         
-        function op = op_expT(obj, funcT, tau, isvec)
+        function state = vec2state(obj, vec, basis)
+            if isrow(vec)
+                vec = vec.';
+            end
+            
+            if ~exist('basis', 'var')
+                basis = obj.basis;
+            end
+
+            sysinfo = SystemInfo(obj.dim, obj.domain, 'SplitUnitary');
+            state = FundamentalState(sysinfo, basis, vec);
+        end
+        
+        function op = op_expT(obj, funcT, tau)
             arguments
                 obj
                 funcT
                 tau = 1
-                isvec = true
             end
 
             if strcmp(obj.basis, 'q') & obj.isfftshift(2)
@@ -27,33 +43,29 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             else
                 x = obj.p;
             end
+            %x = obj.p;
 
-            
-            if isvec
-                op = @(invec) exp( -1j * funcT(x) * tau /obj.hbar) .* invec;
-            else
-                op = @(invec) transpose( exp( -1j * funcT(x) * tau /obj.hbar) )  .* invec;
-            end
+            op = @(vecs) exp( -1j * funcT(x) * tau /obj.hbar) .* vecs;
         end
         
-        function op = op_expV(obj, funcV, tau, isvec)
+        function op = op_expV(obj, funcV, tau)
             arguments
                 obj
                 funcV
                 tau = 1
-                isvec = true;
             end
             
+            %if strcmp(obj.basis, 'p') & obj.isfftshift(1)
+            %    x = ifftshift(obj.q);
+            %else
+            %    x = obj.q;
+            %end            
             x = obj.q;
-            
-            if isvec
-                op = @(invec) exp( -1j * funcV(x) * tau / obj.hbar) .* invec;
-            else
-                op = @(invec) transpose(exp( -1j * funcV(x) * tau / obj.hbar) ) .* invec;
-            end
+
+            op = @(vecs) exp( -1j * funcV(x) * tau /obj.hbar) .* vecs;
         end
                 
-        function mat = mat_expTV(obj, funcT, funcV, tau)
+        function mat = expTVmat(obj, funcT, funcV, tau)
             arguments
                 obj
                 funcT
@@ -61,10 +73,11 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
                 tau = 1
             end
                         
-            expT = op_expT(obj, funcT, tau, false);
-            expV = op_expV(obj, funcV, tau, false);
+            expT = op_expT(obj, funcT, tau);
+            expV = op_expV(obj, funcV, tau);
             
             iden = diag( ones(1, obj.dim, class(obj.domain) ) );
+            
             if strcmp(obj.basis, 'p')                              
                 iden = ifft(iden);
             end
@@ -77,7 +90,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             end                        
         end
         
-        function mat = mat_expVT(obj, funcT, funcV, tau)
+        function mat = expVTmat(obj, funcT, funcV, tau)
             arguments
                 obj
                 funcT
@@ -85,8 +98,8 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
                 tau = 1
             end
                         
-            expT = op_expT(obj, funcT, tau, false);
-            expV = op_expV(obj, funcV, tau, false);
+            expT = op_expT(obj, funcT, tau);
+            expV = op_expV(obj, funcV, tau);
             
             iden = diag( ones(1, obj.dim, class(obj.domain) ) );
             if strcmp(obj.basis, 'q')                              
@@ -101,7 +114,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             end    
         end
         
-        function mat = mat_expVTV(obj, funcT, funcV, tau)
+        function mat = expVTVmat(obj, funcT, funcV, tau)
             arguments
                 obj
                 funcT
@@ -109,8 +122,8 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
                 tau = 1
             end
                         
-            expT = op_expT(obj, funcT, tau, false);
-            expV = op_expV(obj, funcV, tau/2, false);
+            expT = op_expT(obj, funcT, tau);
+            expV = op_expV(obj, funcV, tau/2);
             
             iden = diag( ones(1, obj.dim, class(obj.domain) ) );
             if strcmp(obj.basis, 'p')
@@ -127,7 +140,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
 
         end
         
-        function mat = mat_expTVT(obj, funcT, funcV, tau)
+        function mat = expTVTmat(obj, funcT, funcV, tau)
             arguments
                 obj
                 funcT
@@ -135,8 +148,8 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
                 tau = 1
             end
                         
-            expT = op_expT(obj, funcT, tau/2, false);
-            expV = op_expV(obj, funcV, tau, false);
+            expT = op_expT(obj, funcT, tau/2);
+            expV = op_expV(obj, funcV, tau);
             
             iden = diag( ones(1, obj.dim, class(obj.domain) ) );
             if strcmp(obj.basis, 'q')
@@ -153,190 +166,278 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
 
         end
         
-        
-        
-       
+        function outvec = expTVevolve(obj, invec, funcT, funcV, tau)
+            arguments
+                obj
+                invec 
+                funcT
+                funcV
+                tau {mustBeNumeric} = 1
+            end
             
+            expT = op_expT(obj, funcT, tau);
+            expV = op_expV(obj, funcV, tau);
+            
+            if isa(invec, 'FundamentalState')
+                dtypecmp(obj, invec.y);                                               
+                                
+                if strcmp(invec.basis, 'q')
+                    qvec = invec.y;
+                else
+                    qvec = ifft(invec.y);
+                end
+                                
+                pvec =  fft( expV(qvec) );
+                qvec = ifft( expT(pvec) );
+                                            
+                if strcmp(invec.basis, 'q')
+                    outvec = vec2state(obj, qvec, 'q');
+                else
+                    outvec = vec2state(obj, fft(qvec), 'p');
+                end
+            else
+                dtypecmp(obj, invec);                
+                
+                pvec = fft(expV(invec));
+                outvec = ifft(expT(pvec));
+            end    
+        end
+                
+        function outvec = expVTevolve(obj, invec, funcT, funcV, tau)
+            arguments
+                obj
+                invec 
+                funcT
+                funcV
+                tau {mustBeNumeric} = 1
+            end
+                                    
+            expT = op_expT(obj, funcT, tau);
+            expV = op_expV(obj, funcV, tau);
+            
+            if isa(invec, 'FundamentalState')                
+                dtypecmp(obj, invec.y);
+                
+                if strcmp(invec.basis, 'p')
+                    pvec = invec.y;
+                else
+                    pvec = fft(invec.y);
+                end
+                                
+                qvec = ifft( expT(pvec) );
+                pvec =  fft( expV(qvec) );
+                                            
+                if strcmp(invec.basis, 'p')
+                    outvec = vec2state(obj, pvec, 'p');
+                else
+                    outvec = vec2state(obj, ifft(pvec), 'q');
+                end
+            else
+                dtypecmp(obj, invec);                
+                pvec   =  fft( expV(invec) );
+                outvec = ifft( expT(pvec) );
+            end    
+        end
         
-%         function mat = expTV(obj, funcT, funcV, tau)
-%             % return <q'|exp(-i/hbar *funcT(p)*tau) exp(-i/hbar*funcV(q)*tau)|q>            
-%             arguments
-%                 obj
-%                 funcT
-%                 funcV
-%                 tau = 1
-%             end
-%                         
-%             if obj.isfftshift(2)
-%                 p = fftshift(obj.p);
-%             else
-%                 p = obj.p;
-%             end
-%             
-%             if strcmp(obj.basis, 'q')
-%                 qvecs = diag( ones(1, obj.dim, class(obj.domain) ) );
-%             else
-%                 pvecs = diag( ones(1, obj.dim, class(obj.domain) ) );
-%                 %qvecs = ifft(pvecs)/sqrt(obj.dim);
-%                 qvecs = pvecs;
-%             end
-%             
-%             qvecs = exp( -1j * funcV(obj.q) * tau / obj.hbar ) .* qvecs;
-%             mat = transpose( exp( -1j * funcT(p) * tau / obj.hbar ) ) .* fft( qvecs ) / sqrt(obj.dim);
-%             
-%             if strcmp(obj.basis, 'q')
-%                 mat = ifft(mat) / sqrt(obj.dim);
-%             end
+        function outvec = expVTVevolve(obj, invec, funcT, funcV, tau)
+            arguments
+                obj
+                invec 
+                funcT
+                funcV
+                tau {mustBeNumeric} = 1
+            end
+            
+            expT = op_expT(obj, funcT, tau);
+            expV = op_expV(obj, funcV, tau/2);
+            
+            if isa(invec, 'FundamentalState')
+                dtypecmp(obj, invec.y);                                               
+                                
+                if strcmp(invec.basis, 'q')
+                    qvec = invec.y;
+                else
+                    qvec = ifft(invec.y);
+                end
+                                
+                pvec =  fft( expV(qvec) );
+                qvec = ifft( expT(pvec) );
+                pvec =  fft( expV(qvec) );                
+                                            
+                if strcmp(invec.basis, 'q')
+                    outvec = vec2state(obj, ifft(pvec), 'q');
+                else
+                    outvec = vec2state(obj, pvec, 'p');
+                end
+            else
+                dtypecmp(obj, invec);                
+                
+                pvec   =  fft( expV(invec) );
+                qvec = ifft( expT(pvec) );
+                outvec   =  fft( expV(invec) );                                
+            end    
+        end
+        
+        function outvec = expTVTevolve(obj, invec, funcT, funcV, tau)
+            arguments
+                obj
+                invec 
+                funcT
+                funcV
+                tau {mustBeNumeric} = 1
+            end
+                                    
+            expT = op_expT(obj, funcT, tau/2);
+            expV = op_expV(obj, funcV, tau);
+            
+            if isa(invec, 'FundamentalState')                
+                dtypecmp(obj, invec.y);
+                
+                if strcmp(invec.basis, 'p')
+                    pvec = invec.y;
+                else
+                    pvec = ifft(invec.y);
+                end
+                                       
+                qvec = ifft( expT(pvec) );
+                pvec =  fft( expV(qvec) );
+                qvec = ifft( expT(pvec) );              
+                                            
+                if strcmp(invec.basis, 'q')
+                    outvec = vec2state(obj, qvec, 'q');
+                else
+                    outvec = vec2state(obj, fft(qvec), 'p');
+                end
+            else
+                dtypecmp(obj, invec);
+                pvec = invec;
+                qvec   = ifft( expT(invec) );
+                pvec   =  fft( expV(qvec) );
+                qvec = ifft( expT(pvec) );
+                outvec = qvec;
+            end    
+        end
+        
+        
+        
+        %         %function op = evolutionOP(obj)
+%             op = @(x) EvolveTV(x);
 %         end
 %         
-%         function mat = expVT(obj, funcT, funcV, tau)
+%         %function setop(obj, funcT, funcV, tau)
+%             if exist('tau', 'var')
+%                 obj.tau = tau;
+%             end           
+%             obj.funcT = funcT; % = set(obj, 'funcT', funcT);
+%             obj.funcV = funcV; % = set(obj, 'funcV', funcV);
+%         end
+%         
+%         %function op = getop(obj)
+%             op = @(x) evolveTV(obj, x)
+%         end
+% 
+%         
+%         %function outvec = EvolveTV(obj, invec, funcT, funcV)
 %             arguments
 %                 obj
-%                 funcT
-%                 funcV
-%                 tau = 1
-%             end
-%                         
-%             if obj.isfftshift(2)
-%                 q = fftshift(obj.q);
-%             else
-%                 q = obj.q;
+%                 invec %(:,1) {mustBeNumeric}
+%                 funcT % mustbefunction @funcT
+%                 funcV % mustbefunction @funcV
 %             end
 %             
-%             idmat = diag( ones(1, obj.dim, class(obj.domain) ) );
-%             idmat = fft(idmat);
-%             pvecs = exp( -1j * funcT(obj.p) * tau / obj.hbar ) .* idmat;
-%             mat = transpose( exp( -1j * funcV(obj.q) * tau / obj.hbar ) ) .* ifft( pvecs ) / sqrt(obj.dim);
-%             
-%             if strcmp(obj.basis, 'p')
-%                 mat = fft(mat) / sqrt(obj.dim);
+%             if ~strcmp(obj.dtype, class(invec))
+%                 %st = dbstack;
+%                 %funcname =st.name;
+%                 msg = {"data type error:"
+%                     sprintf("%s.dtype=%s, but class(invec)=%s", class(obj), obj.dtype, class(invec) )
+%                     };
+%                 error(sprintf("%s", msg{:}));
 %             end
+%             
+%             if invec.basis == 'p'
+%                 invec = q2p(invec);
+%             end            
+%                                     
+%             qvec = exp( -1j .* funcV(obj.q) / obj.hbar ) .* invec.y; 
+%             pvec = fft(qvec);
+%             pvec = exp( -1j .* funcT(obj.p) / obj.hbar) .* pvec;
+%             qvec = ifft(pvec);
+%             outvec = vec2state(obj, qvec, 'q');
+%             
+% 
+%             if invec.basis == 'p'
+%                 outvec = outvec.q2p();
+%             end            
+%             
 %         end
-        
-        %function y = nullstate(obj)
-        %    y = FundamentalState(obj.system);
-        %end
-        
-        %function y = systeminfo(obj)
-        %    y = obj.system
-        %end
-        
-        function op = evolutionOP(obj)
-            op = @(x) EvolveTV(x);
-        end
-        
-        function setop(obj, funcT, funcV, tau)
-            if exist('tau', 'var')
-                obj.tau = tau;
-            end           
-            obj.funcT = funcT; % = set(obj, 'funcT', funcT);
-            obj.funcV = funcV; % = set(obj, 'funcV', funcV);
-        end
-        
-        function op = getop(obj)
-            op = @(x) evolveTV(obj, x)
-        end
-
-        
-        function outvec = evolveTV(obj, invec)            
-            arguments
-                obj
-                invec (:,1) {mustBeNumeric}
-                %funcT % mustbefunction @funcT
-                %funcV % mustbefunction @funcV
-            end
-            
-            if obj.basis == 'p'
-                invec = ifft(invec);
-            end
-            
-            q = transpose(obj.q);
-            p = transpose(obj.p);
-            
-            size(q)
-            size(invec)
-            isfftshift = true;
-           
-            if isfftshift
-                V = @(x) obj.funcV( fftshift(x) );
-                T = @(x) obj.funcT( fftshift(x) );
-            else
-                V = @(x) obj.funcV(x);
-                T = @(x) obj.funcT(x);               
-            end
-            
-            vec = exp( -1j * V(q) / obj.hbar ) .* invec;
-            vec = fft(vec);
-            vec = exp( -1j * T(p) / obj.hbar) .* vec;
-            outvec = ifft(vec);
-
-            if obj.basis == 'p'
-                outvec = fft(outvec);
-            end            
-            
-        end
-        
-        function outvec = EvolveVT(obj, invec, funcT, funcV)
-            arguments
-                obj
-                invec (1,:) {mustBeNumeric}
-                funcT % mustbefunction @funcT
-                funcV % mustbefunction @funcV
-            end
-            
-            if obj.basis == 'q'
-                invec = q2p(invec);
-            end            
-            
-            vec = exp( -1j .* funcT(obj.q) / obj.hbar ) .* invec;
-            vec = fft(vec);
-            vec = exp( -1j .* funcV(obj.p) / obj.hbar) .* vec;
-            outvec = ifft(vec);
-            
-            if obj.basis == 'q'
-                invec = q2p(invec);
-            end                                    
-        end
-        
-        function index = sort(obj, targetmat, refmat)
-            mat = conj(targetmat).' * refmat;
-            mat2 = conj(mat) .* mat;
-            
-            qnumber = 1:obj.dim;
-            index = [];
-            for i=1:obj.dim
-                [ovl, ind] = max(mat2(:,i));
-                index = [index, qnumber(ind)];
-                qnumber(ind) = [];
-                mat2(ind,:) = [];
-            end
-
-            if length(unique(index)) ~= obj.dim
-                error("duplicate sort index ")
-            end
-        end
-        
-        function a = AAA(obj)
-            a = 1
-        end
-        
-        
-        function y = test(obj, func)
-            arguments
-                obj
-                func
-            end
-            disp(isa(@func, 'function_handle'))
-            y = 1;
-        end
-        
-        
-        
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 このメソッドの概要をここに記述
-            %   詳細説明をここに記述
-            outputArg = obj.Property1 + inputArg;
-        end
+%         
+%         %function outvec = EvolveVT(obj, invec, funcT, funcV)
+%             arguments
+%                 obj
+%                 invec %(1,:) {mustBeNumeric}
+%                 funcT % mustbefunction @funcT
+%                 funcV % mustbefunction @funcV
+%             end
+%            
+%             
+%             if invec.basis == 'q'
+%                 invec = q2p(invec);
+%             end            
+%             
+%             pvec = exp( -1j .* funcT(obj.p) / obj.hbar ) .* invec.y; 
+%             qvec = fft(pvec);
+%             qvec = exp( -1j .* funcV(obj.q) / obj.hbar) .* qvec;
+%             pvec = ifft(qvec);
+%             outvec = vec2state(obj, pvec, 'p');
+%             
+%             if invec.basis == 'q'
+%                 outvec = outvec.p2q()
+%             end
+% 
+%         end
+%         
+%         
+%         %function a = AAA(obj)
+%             a = 1
+%         end
+%         
+%         
+%         %function y = test(obj, func)
+%             arguments
+%                 obj
+%                 func
+%             end
+%             disp(isa(@func, 'function_handle'))
+%             y = 1;
+%         end
     end
 end
+
+function dtypecmp(obj, vec)
+    if ~strcmp(obj.dtype, class(vec))
+        msg = {'data type error:'
+            sprintf('%s.dtype = %s, but', class(obj), obj.dtype)
+            sprintf('class(invec) = %s', class(vec) )
+            };
+        error(sprintf('%s\n', msg{:}));
+    end
+end
+
+%function vec = expT4vec(obj, funcT, invec)
+%if class(invec) == 'FundamentalState'
+%    invec = invec.prep();
+%    invec = invec.y;
+%end
+%vec = @(invec) transpose( exp( -1j * funcT(obj.p) * tau /obj.hbar) )  .* invec;
+%end
+
+%function vec = expV4vec(obj, funcV, invec)
+
+%if class(invec) == 'FundamentalState'
+%    invec = invec.qrep();
+%    invec = invec.y;
+%end
+%vec = @(invec) transpose( exp( -1j * funcV(obj.q) * tau /obj.hbar) )  .* invec;
+%end
+
 
