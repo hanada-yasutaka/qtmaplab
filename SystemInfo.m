@@ -2,16 +2,15 @@ classdef SystemInfo < matlab.mixin.SetGet
     % SystemInfo the domain of the system
     
     properties (SetAccess = protected)
-        dim {mustBeInteger, mustBePositive} % HilbertSpace
+        dim {mustBeInteger, mustBePositive} % Hilbert space dimension
         domain(2,2) {mustBeReal} = [0,0; 0,0] % domain of phase space: must be [qmin, qmax; pmin, pmax]
         hbar {mustBeReal} % effective Planck constant / (2*pi)
-        %basis {mustBeMember(basis,{'q','p'})} = 'p' % basis (representation) of wavefunction         
-        q {mustBeNumeric} % position coordinate
-        p {mustBeNumeric} % momentum coordinate
+        q (:,1) {mustBeNumeric} % a column vector for the position coordinate (q-direction).
+        p (:,1) {mustBeNumeric} % a column vector for the momentum coordinate (p-direction).
         eps {mustBeNumeric} % machine epsilon
-        pi {mustBeNumeric}
-        twopi {mustBeNumeric}
-        stype = '' % system type such as  'Hamiltonian', 'Unitary' ...
+        pi {mustBeNumeric} % pi
+        twopi {mustBeNumeric} % 2*pi
+        stype = '' % system type such as  'Hamiltonian', 'Unitary', ...
         dtype {mustBeMember(dtype,{'mp','double'})} = 'double' % data type: 'double' or 'mp'
         periodic {mustBeNumericOrLogical} = true % coordinate is periodic or not
         isfftshift = [false false]
@@ -39,8 +38,6 @@ classdef SystemInfo < matlab.mixin.SetGet
                 error('non-symmetric domain is not supported yet');
             end
             
-
-            
             if class(domain) == "double"
                 twopi = 2*pi;
                 obj.pi = pi;
@@ -55,7 +52,6 @@ classdef SystemInfo < matlab.mixin.SetGet
             obj.dim = dim;
             obj.domain = domain;
             obj.twopi = twopi;
-            %obj.basis = basis;
             obj.dtype = class(domain);
             
             if exist('stype', 'var')
@@ -66,14 +62,21 @@ classdef SystemInfo < matlab.mixin.SetGet
             planck = w/obj.dim;
             obj.hbar = planck/twopi;
             obj.eps = eps(obj.hbar);
-
-            q = linspace(domain(1,1), domain(1,2), obj.dim+1);
-            p = linspace(domain(2,1), domain(2,2), obj.dim+1);
-            obj.q = q(1:end-1);
-            obj.p = p(1:end-1);
+            
+            if mod(obj.dim, 2) == 0
+                dq = (domain(1,2) - domain(1,1))/obj.dim;
+                dp = (domain(2,2) - domain(2,1))/obj.dim;
+                q = domain(1,1): dq: domain(1,2) - dq;
+                p = domain(2,1): dp: domain(2,2) - dp;               
+            else
+                dq = (domain(1,2) - domain(1,1))/obj.dim;
+                dp = (domain(2,2) - domain(2,1))/obj.dim;
+                q = domain(1,1) + dq/2: dq: domain(1,2) - dq/2;
+                p = domain(2,1) + dp/2: dp: domain(2,2) - dp/2;                
+            end
+            obj.q = q.';
+            obj.p = p.';
         end
-        
-        
     end
 end
 
