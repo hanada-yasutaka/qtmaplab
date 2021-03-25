@@ -100,12 +100,7 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
             y = zeros(1, obj.dim, class(obj.domain));
             state = FundamentalState(system, obj.basis, y);            
         end
-        
-        function state = vec2state(obj, data)
-            system = SystemInfo(obj.dim, obj.domain, class(obj) );            
-            state = FundamentalState(system, obj.basis, data);                        
-        end
-        
+                
 %         function states = eigs2states(obj, evals, evecs)
 %             states = [];
 %             dim = obj.dim;

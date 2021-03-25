@@ -86,7 +86,94 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                 obj = obj.q2p();
             end
         end
-              
+
+        function [X, Y, mat] = hsmrep(varargin)
+            
+            par = inputParser;
+            addRequired(par, 'obj', @isobject);
+            parse(par, varargin{1});
+            obj = par.Results.obj;
+                                    
+            addOptional(par, 'gridnum',       50 )%, @(x) all(x>0 & x == floor(x)) );
+            addOptional(par, 'vrange', obj.domain)%, @(x) isnumeric(x) & all(size(x) == [2 2], 'all') );
+            addOptional(par, 'ismp',       false )%, @islogical);
+                                        
+            parse(par, varargin{:} );
+            vrange  = par.Results.vrange;
+            gridnum  = par.Results.gridnum;                                   
+            ismp = par.Results.ismp;
+                                    
+            if length(gridnum) == 1
+                gridnum = [gridnum gridnum];
+            end                        
+                        
+            if strcmp(obj.basis, 'q')
+                v = obj.y;                
+            elseif strcmp(obj.basis, 'p')
+                vec = obj.p2q();
+                v = vec.y;
+            end
+            
+            v = v / sqrt( dot(v,v) );
+            
+            if ismp
+                x = obj.q;
+                if ~strcmp( class(vrange), 'mp')
+                    msg = {"The computation precision is set as mp, but your the input arguments"
+                        sprintf("vrange are %s", class(vrange))
+                        "This is not safe to keep preciison."
+                        };
+                    warning(sprintf("%s\n",msg{:}))
+                end
+                hbar = obj.hbar;
+                qc = linspace(vrange(2,1), vrange(2,2), gridnum(1));
+                pc = linspace(vrange(2,1), vrange(2,2), gridnum(2));
+                
+                [X,Y] = meshgrid(qc,pc);              
+                mat = zeros(gridnum(1), gridnum(2), class(v));
+                if obj.periodic
+                    csfun = @(qc, pc) csp(x, hbar, obj.domain(1,:), qc, pc, 5);
+                else
+                    csfun = @(qc, pc)  cs(x, hbar, qc, pc);
+                end                
+            else
+                x = double(obj.q);              
+                %x = linspace(double(vrange(1,1)), double(vrange(1,2)), obj.dim);
+                v = double(v);
+                vrange = double(vrange);
+                
+                hbar = double(obj.hbar);
+                
+                %dq = double( ( vrange(1,1) - vrange(1,2) )/ gridnum(1) );
+                %dp = double( ( vrange(2,1) - vrange(2,2) )/ gridnum(2) );               
+                
+                %qc = vrange(1,1): dq : vrange(1,2);
+                %pc = vrange(2,1): dp : vrange(2,2);               
+                
+                qc = linspace(vrange(1,1), vrange(1,2), gridnum(1));
+                pc = linspace(vrange(2,1), vrange(2,2), gridnum(2));
+                
+                [X,Y] = meshgrid(qc, pc);
+                mat = zeros(gridnum(1), gridnum(2), 'double');
+                
+                if obj.periodic
+                    csfun = @(qc, pc) csp(x, hbar, double(obj.domain(1,:)), qc, pc, 5);
+                else
+                    csfun = @(qc, pc)  cs(x, hbar, qc, pc);
+                end
+                
+            end
+                                   
+            for i = 1:gridnum(1)
+                for j = 1:gridnum(2)
+                    csv = transpose( csfun(qc(i), pc(j)) );
+                    % dot(c, v) = abs2( sum( conj(c) .* v) )
+                    mat(j,i) = abs2( dot(csv, v) );
+                end
+            end
+        end
+        
+        
         function y = abs2(obj)
             % return |<x|psi>|^2
             y = abs( obj.y .* conj(obj.y) );
@@ -111,13 +198,6 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             builtin('display', obj);
         end
         
-        %function obj = times(v1, v2)
-            % overload built-in times ( .* ) function to <v1|v2> xxxx
-            % times may invoke |v1> * |v2> 
-        %    basisconsistency(v1, v2);
-        %    z = inner(v1, v2);
-        %    obj = FundamentalState(v1.sysinfo, v1.basis, z);
-        %end
         
         function obj = plus(v1, v2)
             % overload built-in plus ( + ) function to |v1> + |v2>
@@ -139,20 +219,34 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             obj = FundamentalState(v1.sysinfo, v1.basis, v3);
         end
                     
-        function scalar = inner(v1, v2)
-            % return < v1 | v2 >
-            if strcmp( class(v2), 'FundamentalState')
-                v2 = v2.y;
+        function scalar = inner(v1, vm)
+            % return < v1 | vm > if ins isvector
+            % if vm is matrix such that
+            % vm = [a, b, c, ...]
+            % then inner returns vector for the inner product
+            % [ <v1|a>, <v1|b>, <v1|c> ]
+            
+            if strcmp( class(vm), 'FundamentalState')
+                vm = vm.y;
             end
             
-            if isvector(v2)
-                scalar = dot(v1.y, v2);
-            elseif ismatrix(v2)
-                scalar = conj(v1.y).' * v2;
+            if isvector(vm)
+                scalar = dot(v1.y, vm);
+            elseif ismatrix(vm)
+                scalar = conj(v1.y).' * vm;
             else
-                error("v2 must be vector or matrix");
+                error("mv must be vector or matrix");
             end
         end
+        
+        function obj = times(v1, a)
+            % overload built-in times ( .* ) (element wise multiple) function to a * |v1> where "a" must be scalar
+            if ~isscalar(a)
+                error('"a" must be scalar')
+            end            
+            obj = FundamentalState(v1.sysinfo, v1.basis, v1.y .* a);
+        end
+        
         
         function obj = mrdivide(v1, a)
             % return v1/a
@@ -187,7 +281,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             addOptional(par,'periodic', default, @islogical);
             addOptional(par,'verbose',  default, @islogical);
             pnum = 5;
-            addOptional(par,'pnum',  pnum, @(x) isinteger(x) & isreal(x) );
+            addOptional(par,'pnum',  pnum, @(x) x>0 & x==floor(x) );
                         
             parse(par, obj, qc, pc, varargin{:});
             qc  = par.Results.qc;
@@ -195,9 +289,10 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             periodic = par.Results.periodic;
             verbose = par.Results.verbose;            
             pnum = par.Results.pnum;
-                                 
+            
             if strcmp(obj.dtype, 'mp') && verbose
-                if strcmp(class(qc), 'double') || strcmp(class(pc), 'double') 
+                if abs(mp(num2str(pc)) - pc) ~=0 || abs(mp(num2str(qc)) - qc) ~=0
+                %if strcmp(class(qc), 'double') || strcmp(class(pc), 'double') 
                     st = dbstack;                   
                     funcname =st.name;
                     str = sprintf( "qc(%s):%s\npc(%s):%s", class(qc), num2str(mp(qc)), class(pc), num2str(mp(pc)) );
@@ -226,77 +321,37 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                 error("periodic must be true/false");
             end
         end
-                
-        function [X, Y, mat] = hsmrep(obj, gridnum, range, ismp)
-            arguments
-                obj;
-                gridnum {mustBeInteger, mustBePositive} = 50
-                range {mustBeReal} = obj.domain %[obj.domain(1,1) obj.domain(1,2); obj.domain(2,1), obj.domain(2,2)];
-                ismp {mustBeNumericOrLogical} = false 
-            end
-            
-            if strcmp(obj.basis, 'q')
-                v = obj.y;                
-            elseif strcmp(obj.basis, 'p')
-                vec = obj.p2q();
-                v = vec.y;
-            end
-            
-            v = v / sqrt( dot(v,v) );
-            
-            if ismp
-                x = obj.q;
-                qc = linspace(obj.domain(1,1), obj.domain(1,2), gridnum);
-                pc = linspace(obj.domain(2,1), obj.domain(2,2), gridnum);
-                
-                [X,Y] = meshgrid(qc,pc);
-                mat = zeros(gridnum, class(v));
-            else
-                x = double(obj.q);              
-                v = double(v);
-                hbar = double(obj.hbar);
-                
-                qc = linspace(double(obj.domain(1,1)), double(obj.domain(1,2)), gridnum);
-                pc = linspace(double(obj.domain(2,1)), double(obj.domain(2,2)), gridnum);
-                
-                [X,Y] = meshgrid(qc, pc);
-                mat = zeros(gridnum, 'double');
-            end
-            
-            if obj.periodic
-                csfun = @(qc, pc) csp(x, hbar, double(obj.domain(1,:)), qc, pc, 5);
-            else
-                csfun = @(qc, pc)  cs(x, hbar, qc, pc);
-            end
-            
-            
-            for i = 1:length(qc)
-                for j = 1:length(pc)
-                    csv = transpose( csfun(qc(j), pc(i)) );
-                    % dot(c, v) = abs2( sum( conj(c) .* v) )
-                    mat(i,j) = abs2( dot(csv, v) );
-                end
-            end            
-        end
+                        
         
-        
-        function obj = delta(obj, xc, verbose)
-            arguments
-                obj
-                xc
-                verbose {mustBeNumericOrLogical} = true;
-            end
+        function obj = delta(obj, xc, varargin)
             
+            par = inputParser;
+            addRequired(par, 'obj', @isobject);                        
+            addRequired(par, 'xc',  @isreal);
+
+            default = true;
+            addOptional(par,'verbose', default, @islogical);
+                        
+            parse(par, obj, xc, varargin{:});
+            xc  = par.Results.xc;
+            verbose = par.Results.verbose;            
+                        
             [~, ind] = min( abs(obj.x - xc) );
             y = zeros(obj.dim, 1, class(obj.domain) );
             y(ind) = 1;
             
-            if verbose
-                fprintf("set xc = %f (index = %d)\n", obj.x(ind), ind );
+            if xc ~= obj.x(ind) && verbose
+                msg = {
+                    sprintf('input argument \nxc = %.16f but the ''xc'' is set to ', xc)
+                    sprintf('xc = %.16f (obj.y(ind) = 1 where index = %d) due to the discreteness', obj.x(ind), ind)
+                    'If you want to be slient on this warning, input arguments add as'
+                    sprintf('delta(xc, ''verbose'', false)')
+                    };
+                warning('%s\n', msg{:});
             end
             obj = FundamentalState(obj.sysinfo, obj.basis, y);            
         end
-        
+
         
         function save_state()
         end

@@ -3,22 +3,24 @@ classdef TestFundamentalState < matlab.unittest.TestCase
     properties
         fig
         state
+        sysinfo
+        basis
     end
  
     methods(TestMethodSetup)
         function exportpath(obj)
             %addpath("../");
-            obj.fig = figure;
+            obj.fig = @figure;
             
             r = randi([0 1], 1);
             if mod(r, 2) == 0
-                basis = 'p';
+                obj.basis = 'p';
             else
-                basis = 'q';
+                obj.basis = 'q';
             end
 
-            sysinfo = UnitTest.set_test_system();                   
-            obj.state = FundamentalState(sysinfo, basis);
+            obj.sysinfo = UnitTest.set_test_system();
+            obj.state = FundamentalState(obj.sysinfo, obj.basis);
             
         end
     end
@@ -31,6 +33,52 @@ classdef TestFundamentalState < matlab.unittest.TestCase
      
  
     methods(Test)
+        
+        function addminus(obj)
+            dim = obj.sysinfo.dim;
+            v1 = rand(dim, 1) + 1j * rand(dim, 1);
+            v2 = rand(dim, 1) + 1j * rand(dim, 1);
+            s1 = FundamentalState(obj.sysinfo, obj.basis, v1);
+            s2 = FundamentalState(obj.sysinfo, obj.basis, v2);
+            tol = 1e-15;
+            
+            s = s1 + s2;
+            v = v1 + v2;
+            assertEqual(obj, s.y, v, 'AbsTol', tol);
+
+            s = s1 - s2;
+            v = v1 - v2;
+            assertEqual(obj, s.y, v, 'AbsTol', tol);
+            
+        end
+            
+        function inner(obj)
+            dim = obj.sysinfo.dim;
+            v1 = rand(dim, 1) + 1j * rand(dim, 1);
+            s1 = FundamentalState(obj.sysinfo, obj.basis, v1);
+            s1 = s1.normalize();
+            a = inner(s1, s1);
+            tol = 1e-15;
+            assertEqual(obj, a, 1, 'AbsTol', tol);
+        end
+        
+        function scaler_multdiv(obj)
+            dim = obj.sysinfo.dim;            
+            v1 = rand(dim, 1) + 1j * rand(dim, 1);
+            a = rand(1);
+            s1 = FundamentalState(obj.sysinfo, obj.basis, v1);
+            s = s1/a;
+            tol = 1e-15;
+            assertEqual(obj, s.y, v1 / a, 'AbsTol', tol);
+            s = s1 .* a;
+            assertEqual(obj, s.y, v1 .* a, 'AbsTol', tol);            
+        end
+            
+        
+%        function delta(obj)
+%            a = obj.state.delta(0.00001, 'verbose', true);
+%        end
+        
         
         function coherent(obj)
             domain = obj.state.domain;
@@ -47,7 +95,7 @@ classdef TestFundamentalState < matlab.unittest.TestCase
             hold(ax0, 'on')            
 
             qpc = [(rand(1) - 1/2) + qc, (rand(1) -1/2) + pc];
-            cs = obj.state.coherent(qpc(1), qpc(2), 'verbose', false);
+            cs = obj.state.coherent(qpc(1), qpc(2), 'verbose', true);
             
             plot(ax1, [qpc(1), qpc(1)], [-40, 1], '--k');
             plot(ax2, [-40, 1], [qpc(2), qpc(2)], '--k');                        
@@ -105,11 +153,14 @@ classdef TestFundamentalState < matlab.unittest.TestCase
             
             hold(ax1, 'off')
             hold(ax2, 'off')
-            savepath='UnitTestRes/';
+            
+            savepath = strcat(pwd, '/UnitTestRes');
+            
             if exist(savepath, 'dir')
-                fname = 'coherent.png'
-                saveas(gcf, savepath + 'coherent.png');
-                fprintf("save: %s%s\n",savepath, fname);
+                fname = 'coherent.png';
+                path = sprintf('%s/%s', savepath, fname);
+                saveas(gcf, path);
+                fprintf("save: %s/\n", path);
             else
                 waitforbuttonpress
             end
