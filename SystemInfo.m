@@ -1,6 +1,22 @@
 classdef SystemInfo < matlab.mixin.SetGet
-    % SystemInfo the domain of the system
-    
+    % SystemInfo defines the domain of the system (wavefunction)
+    %
+    % 
+    % If you set the domain in the double precision, e.g,
+    % 
+    %     SystemInfo(10, [-pi pi; -pi pi])
+    % 
+    % the precision set to 'double' (Matlab default precision).
+    %
+    % If you have a license to use Advanpix toolbox, Advanpix toolbox path add correctly, and the domain set up in 'mp', e.g, 
+    %    
+    %     addpath('path/to/Advanpix/toolbox/')
+    %     SystemInfo(10, mp('[-pi pi; -pi pi]')
+    %
+    % SystemInfo set up to use multi-precision scheme.
+    % 
+    % The details of Advanpix toolbox can be see in https://www.advanpix.com
+    % 
     properties (SetAccess = protected)
         dim {mustBeInteger, mustBePositive} % Hilbert space dimension
         domain(2,2) {mustBeReal} = [0,0; 0,0] % domain of phase space: must be [qmin, qmax; pmin, pmax]
@@ -13,7 +29,7 @@ classdef SystemInfo < matlab.mixin.SetGet
         stype = '' % system type such as  'Hamiltonian', 'Unitary', ...
         dtype {mustBeMember(dtype,{'mp','double'})} = 'double' % data type: 'double' or 'mp'
         periodic {mustBeNumericOrLogical} = true % coordinate is periodic or not
-        isfftshift = [false false]
+        isfftshift = [false false] 
     end
     
     methods
@@ -39,10 +55,10 @@ classdef SystemInfo < matlab.mixin.SetGet
             end
             
             if class(domain) == "double"
-                twopi = 2*pi;
+                obj.twopi = 2*pi;
                 obj.pi = pi;
             elseif class(domain) == "mp"
-                twopi = mp('2*pi');
+                obj.twopi = mp('2*pi');
                 obj.pi = mp('pi');
             else
                 str = sprintf('class(domain)=%s\nclass of domain must be "double" or "mp"\n', class(domain));
@@ -51,7 +67,6 @@ classdef SystemInfo < matlab.mixin.SetGet
             
             obj.dim = dim;
             obj.domain = domain;
-            obj.twopi = twopi;
             obj.dtype = class(domain);
             
             if exist('stype', 'var')
@@ -60,7 +75,7 @@ classdef SystemInfo < matlab.mixin.SetGet
             
             w = (domain(1,2) - domain(1,1) ) * (domain(2,2) - domain(2,1));
             planck = w/obj.dim;
-            obj.hbar = planck/twopi;
+            obj.hbar = planck/obj.twopi;
             obj.eps = eps(obj.hbar);
             
             if mod(obj.dim, 2) == 0

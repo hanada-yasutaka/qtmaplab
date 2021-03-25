@@ -1,7 +1,5 @@
 classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
-    % FundamentalState is a class of a 1-dim. wavefunction with position $q$ and
-    % momentum $p$ representations.
-    %
+    % FundamentalState provide a class of a 1-dim. wavefunction with fundamental basis e.g, position $q$ and momentum $p$ basis.
     properties (SetAccess = protected)
         sysinfo % instance of the class SystemInfo        
         basis {mustBeMember(basis,{'q','p'})} = 'p' % basis (representation) of wavefunction                 
@@ -102,6 +100,10 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             vrange  = par.Results.vrange;
             gridnum  = par.Results.gridnum;                                   
             ismp = par.Results.ismp;
+            
+            assert(vrange(1,2) > vrange(1,1), 'vrange(1,1) >= vrange(1,2)');
+            assert(vrange(2,2) > vrange(2,1), 'vrange(2,1) >= vrange(2,2)');
+            
                                     
             if length(gridnum) == 1
                 gridnum = [gridnum gridnum];

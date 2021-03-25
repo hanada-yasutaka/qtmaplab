@@ -28,10 +28,14 @@ sH = SplitHamiltonian(dim, domain, basis);
 
 T = @(x) x.^2/2;
 V = @(x) cos(x);
-
 matT = sH.matT(T);
 matV = sH.matV(V);
-
+%class(T(1))
+%assertWarningFree(@T(1))
+%assertWarningFree(T(1))
+%matT = sH.matT(T);
+%matV = sH.matV(V);
+%return 
 matH = matT + matV;
 [evecs, evalsmat] = eig(matH);
 [evals, sindex] = sort(real(diag(evalsmat)));
@@ -84,4 +88,12 @@ for i=1:dim
     for ax=axs
         cla(ax);
     end
+end
+
+function y = fT(x)
+y = x.^2/2;
+end
+
+function y = fV(x)
+y = cos(x);
 end
