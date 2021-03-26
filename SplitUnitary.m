@@ -1,11 +1,15 @@
 classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
-    %SplitUnitary 
-    %solving eigenvalue problem for quantum map ()
+    % SplitUnitary provides a solver for the eigenvalue/time-evolution problem of the exponential split operator, e.g,
+    % $U = \exp(-i*T(p)*\tau/\hbar) \exp(-i*V(p)*\tau/\hbar)$,
+    % $U = \exp(-i*V(p)*\tau/\hbar) \exp(-i*T(p)*\tau/\hbar)$,
+    % and
+    % higher order symplectic integrator construction.
+    %
     properties (SetAccess = protected)
-        basis {mustBeMember(basis,{'p', 'q'})} = 'p'; 
-        tau {mustBeNumeric} = 1;
-        funcT;
-        funcV;
+        basis {mustBeMember(basis,{'p', 'q'})} = 'p'; % representation basis which must be 'q' or 'p'
+        tau {mustBeNumeric} = 1; % time step of the quatnum map.
+%        funcT;
+%        funcV;
     end
     
     methods
@@ -31,6 +35,100 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             state = FundamentalState(sysinfo, basis, vec);
         end
         
+        function [op, info] = SIevolve(obj, funcT, funcV, varargin)
+            % return evolution operator with n-th order symplectic integrator 
+            %
+            par = inputParser;
+            
+            addOptional(par, 'tau', 1, @isnumeric)
+            addOptional(par, 'SIorder', 1, @(x) all(x>0 & x == floor(x)) );
+            addOptional(par, 'OPorder', 'TV', @(x) ismember(x, ["TV" "VT" "TVT" "VTV"]) );
+            
+            parse(par, varargin{:} );            
+            tau     = par.Results.tau;            
+            SIorder = par.Results.SIorder;
+            OPorder = par.Results.OPorder;
+            
+            if strcmp(OPorder, 'TVT')
+                op = @(invec) obj.expTVTevolve(invec, funcT, funcV, tau);
+            elseif strcmp(OPorder, 'VTV')
+                op = @(invec) obj.expVTVevolve(invec, funcT, funcV, tau);
+            elseif strcmp(OPorder, "TV")
+                if SIorder == 1
+                    op = @(invec) obj.expTVevolve(invec, funcT, funcV, tau);
+                elseif SIorder == 2
+                    op = @(invec) obj.expVTVevolve(invec, funcT, funcV, tau);
+                else
+                    error('siorder > 2 is not yes implement');
+                end
+            elseif strcmp(OPorder, "VT")
+                if SIorder == 1
+                    op = @(invec) obj.expVTevolve(invec, funcT, funcV, tau)
+                elseif SIorder == 2
+                    op = @(invec) obj.expTVTevolve(invec, funcT, funcV, tau)
+                else
+                    error('siorder > 2 is not yes implement');
+                end                              
+            else
+                error('oporder must be ''TV'' or ''VT'' ');
+            end
+            info = '';
+        end
+        
+        function [mat, info] = SImatrix(obj, funcT, funcV, varargin)
+            % return <x'|U|x>
+            %
+            % where U is n-th order simplectic integrator 
+            % and x = obj.basis
+            par = inputParser;
+            
+            addOptional(par, 'tau', 1, @isnumeric)
+            addOptional(par, 'SIorder', 1, @(x) all(x>0 & x == floor(x)) );
+            addOptional(par, 'OPorder', 'TV', @(x) ismember(x, ["TV" "VT" "TVT" "VTV"]) );
+            
+            parse(par, varargin{:} );            
+            tau     = par.Results.tau;            
+            SIorder = par.Results.SIorder;
+            OPorder = par.Results.OPorder;
+            
+            
+            if strcmp(OPorder, 'TVT')
+                
+                mat = obj.expTVTmat(funcT, funcV, tau);
+                
+            elseif strcmp(OPorder, 'VTV')
+                
+                mat = obj.expVTVmat(funcT, funcV, tau);
+                
+            elseif strcmp(OPorder, 'TV')
+                if SIorder == 1
+                    
+                    mat = obj.expTVmat(funcT, funcV, tau);
+                    
+                elseif SIorder == 2
+                    
+                    mat = obj.expVTVmat(funcT, funcV, tau);
+                else
+                    error('siorder > 2 is not yes implement');
+                end
+            elseif strcmp(OPorder, "VT")
+                if SIorder == 1
+                    mat = obj.expVTmat(funcT, funcV, tau);
+                elseif SIorder == 2
+                    mat = obj.expTVTmat(funcT, funcV, tau);
+                else
+                    error('siorder > 2 is not yes implement');
+                end                              
+            else
+                error('oporder must be ''TV'' or ''VT'' ');
+            end
+            info = '';
+        end
+        
+                
+    end
+    
+    methods (Access = private)
         function op = op_expT(obj, funcT, tau)
             arguments
                 obj
@@ -64,6 +162,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
 
             op = @(vecs) exp( -1j * funcV(x) * tau /obj.hbar) .* vecs;
         end
+        
                 
         function mat = expTVmat(obj, funcT, funcV, tau)
             arguments
