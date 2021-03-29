@@ -1,22 +1,11 @@
 clear all
-AdvanpixMCT='AdvanpixMCT-4.8.3.14460/';
-if ismac
-    addpath("/Users/hanada/OneDrive/Packages/qtmaplab/");
-    addpath(sprintf("/Users/hanada/Applications/%s",AdvanpixMCT));
-elseif isunix
-    [~, name] = system('hostname');
-    if strcmp(strtrim(name), 'bohigas')
-        addpath("/home/hanada/OneDrive/Packages/qtmaplab/");
-        addpath(sprintf("/home/hanada/Applications/%s",AdvanpixMCT));        
-    else
-        addpath("/nfs/qtmaplab/");
-        addpath("/nfs/AdvanpixMCT-4.8.3.14440/");
-    end
-end
+%private_addpath('AdvanpixMCT-4.8.3.14460/');
+addpath('../')
+
 
 dim = 50;
-domain = [-pi pi;0 2*pi];
-domain = [0 2*pi;0 2*pi];
+domain = [-pi pi;-pi pi];
+%domain = [0 2*pi;0 2*pi];
 %domain = [-pi pi;-pi pi];
 %domain = [0 2*pi;-pi pi];
 
@@ -27,11 +16,15 @@ domain = [0 2*pi;0 2*pi];
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
 sU = SplitUnitary(dim, domain, basis);
-k = 1;
-tau = 1;
 
-matT = sH.matT(@funcT);
-matV = sH.matV(@funcV);
+
+T = @(x) x.^2/2;
+V = @(x) cos(x);
+dT = @(x) x;
+dV = @(x) -sin(x);
+
+matT = sH.matT(T);
+matV = sH.matV(V);
 
 matH = matT + matV;
 [hevecs, hevalsmat] = eig(matH);
@@ -40,7 +33,11 @@ matH = matT + matV;
 hevecs = hevecs(:, sindex);
 hstates= eigs2states(sH, hevecs, hevals);
 
-matU = sU.expVTmat(@funcT, @funcV, tau);
+siorder = 1;
+tau = 1;
+
+matU = sU.SImatrix(T, V, 'tau', 1, 'order', siorder);
+CSI = SimplecticIntegrator(dT, dV, 'tau', tau, 'order', siorder);
 
 [uevecs, uevals] = eig(matU);
 sindex = sortindex(uevecs, hevecs);
@@ -50,108 +47,96 @@ uevals = diag(uevals(sindex, sindex) );
 
 ustates = eigs2states(sU, uevecs, uevals);
 
-sample = 100;
+sample = 20;
 tmax = 300;
 twopi = 2*pi;
-%q0 = (rand(1, sample)-0.5)*twopi;
-p0 = (rand(1, sample)-0.5)*twopi*2;
-q0 = rand(1, sample)*twopi;
-%p0 = rand(1, sample)*twopi;
-%linspace(-pi, pi, sample);
-%p0 = zeros(1, sample);
-trajq = [];
-trajp = [];
+q0 = linspace(domain(1,1), domain(1,2) , sample);
+p0 = zeros(1, sample);
+q1 = zeros(1, sample);
+p1 = linspace(domain(2,1), domain(2,2), sample);
+x = [[q0, q1]; [p0, p1]];
+traj = [[]; []];
+
 for i=1:tmax
-    [q0,p0] = fVT(q0,p0, k,tau);
-    q0 = q0 - floor((q0 - pi)/twopi)*twopi - twopi;
-    %p0 = p0 - floor((p0 - pi)/twopi)*twopi - twopi;
-    %q0 = q0 - floor(q0/twopi)*twopi;
-    %p0 = p0 - floor(p0/twopi)*twopi;    
-    trajq = [trajq, q0];
-    trajp = [trajp, p0];
+    x = CSI.evolve(x);
+    q = x(1,:);
+    p = x(2,:);
+    q = q - floor((q - pi)/twopi)*twopi - twopi;
+    traj = horzcat(traj, [q;p]);        
 end    
-%plot(q0, p0, '.')
+
+fig = figure('Position', [10 10 700 700]);
+ax1 = axes('Position',[0.1  0.55  .38 .38],'Box','on');
+ax2 = axes('Position',[0.55 0.55 .38 .38],'Box','on');
+ax3 = axes('Position',[0.1  0.09  .38 .38],'Box','on');
+ax4 = axes('Position',[0.55 0.09 .38 .38],'Box','on');
+axs = [ax1 ax2 ax3 ax4];
+
 
 for i=1:dim
     s = ustates(i); 
+
+    for ax=axs
+        hold(ax, 'on');
+    end
+        
+    %%% plot axs(1): qrep
+    ax = axs(1);
+    plot(ax, s.q, log10(abs2( s.qrep() )), '-')
+    title(ax, sprintf("norm=%f", norm(s.qrep()) ));
+    xlabel(ax, '$q$', 'Interpreter', 'latex', 'FontSize', 15);    
+    ylabel(ax, '$|\langle q|\psi_n\rangle|^2$', 'Interpreter', 'latex', 'FontSize', 15);
     
-    tiledlayout(2,2)
-    nexttile;
-    plot(s.q, log10(abs2( s.qrep() )), '-')
-    title(sprintf("norm=%f", norm(s.qrep()) ));
     
-    nexttile;
+    %%% plot axs(2): eigenvalues 
+    ax = axs(2);
     theta = linspace(-pi, pi, 100);
     z = exp(1j*theta);
-    plot(real(z), imag(z), '-k');
-    hold on 
-    scatter(real(uevals), imag(uevals) );
-    scatter(real(s.eigenvalue), imag(s.eigenvalue),100, 'filled');
-    hold off
-    nexttile;
+    plot(ax, real(z), imag(z), '-k');
+    scatter(ax, real(uevals), imag(uevals) );
+    scatter(ax, real(s.eigenvalue), imag(s.eigenvalue),100, 'filled');
+    title(ax, sprintf("%d-th eigs, $u_n$=%f%+fi", i, real(s.eigenvalue), imag(s.eigenvalue)), 'Interpreter', 'latex');    
+    xlabel(ax, '$\mathrm{Re}(u_n)$', 'Interpreter', 'latex', 'FontSize', 15);
+    ylabel(ax, '$\mathrm{Im}(u_m)$', 'Interpreter', 'latex', 'FontSize', 15);    
     
+    
+    %%% plot axs(3): hsmplot
+    ax = axs(3);
     [x,y,z] = s.hsmrep();
-    contour(x, y, z, 10, 'LineWidth', 3);
-    hold on;
-    d = scatter(trajq, trajp, 1, '.');%, 'MarkerSize', 1, 'Marker', 'o')
-    %d = scatter(trajq, trajp+2*pi, 1, '.');%, 'MarkerSize', 1, 'Marker', 'o')    
-    axis(reshape(domain.', 1, []));
-    %axis([0 2*pi 0 2*pi])
-    hold off
+    contour(ax, x, y, z, 10 , 'LineColor', 'none', 'Fill','on');
+    d = scatter(ax, traj(1,:), traj(2,:), 1, '.');%, 'MarkerSize', 1, 'Marker', 'o')    
+    zmax = max(z, [], 'all');
+    colormap(ax, flipud(hot));
+    caxis(ax, [-inf zmax]) % colorbar scale
+    cb = colorbar(ax,'westoutside');
+    cb.Position = cb.Position - [0.12, 0, 0, 0]; % position of colorbar
+    cb.Ticks=[];  % remove colorbar ticks
+    xlabel(ax, '$q$', 'Interpreter', 'latex', 'FontSize', 15);
+    ylabel(ax, '$p$', 'Interpreter', 'latex', 'FontSize', 15);        
+    axis(ax, reshape(domain.', 1, []));
     
-    nexttile
-    plot(log10(abs2( s.prep() )), s.p, '-')    
-    title(sprintf("norm=%f", norm(s.prep()) ))
-    %e = s.eigenvalue;
-    %str = sprintf("%d-th eigs,E_n=%f", i, e); 
-    %title(str);
-    %fprintf("press enter to the next:\n")
-    fprintf("%d\n", i);
+    %%% plot axs(4): prep
+    ax = axs(4);
+    plot(ax, log10(abs2( s.prep() )), s.p, '-')    
+    title(ax, sprintf("norm=%f", norm(s.prep()) ))
+    xlabel(ax, '$|\langle p|\psi_n\rangle|^2$', 'Interpreter', 'latex', 'FontSize', 15);
+    ylabel(ax, '$p$', 'Interpreter', 'latex', 'FontSize', 15);        
+    
+    %fprintf("%d\n", i);
     %savefig(sprintf("test/test_%d.png", i));
+    for ax=axs
+        hold(ax, 'off')
+    end
+    
+    fprintf("press button to the next:\n");
     waitforbuttonpress
-end
-
-return
-
-
-
-function [qq,pp] = fTV(q,p,k,tau)
-    pp = p - k*dfuncV(q)*tau;
-    qq = q + dfuncT(pp)*tau;
-end
-
-function [qq,pp] = fVT(q,p,k,tau)
-    qq = q + dfuncT(p)*tau;
-    pp = p - k*dfuncV(qq)*tau;
-end
-
-function [q,p] = fVTV(q,p,k,tau)
-    p = p - k*dfuncV(q)*tau/2;
-    q = q + dfuncT(p)*tau;
-    p = p - k*dfuncV(q)*tau/2;
+    
+    for ax=axs
+        colorbar('off');
+        cla(ax);        
+    end    
 end
 
 
-function [q,p] = fTVT(q,p,k,tau)
-    q = q + dfuncT(p)*tau/2;
-    p = p - k*dfuncV(q)*tau;
-    q = q + dfuncT(p)*tau/2;    
-end
 
 
-function y = funcV(x)
-    y = cos(x);
-end
-
-function y = funcT(x)
-    y = x .^2 / 2;
-end
-
-
-function y = dfuncV(x)
-    y = -sin(x);
-end
-
-function y = dfuncT(x)
-    y = x ;
-end

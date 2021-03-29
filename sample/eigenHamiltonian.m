@@ -1,18 +1,6 @@
 clear all
-AdvanpixMCT='AdvanpixMCT-4.8.3.14460/';
-if ismac
-    addpath("/Users/hanada/OneDrive/Packages/qtmaplab/");
-    addpath(sprintf("/Users/hanada/Applications/%s",AdvanpixMCT));
-elseif isunix
-    [~, name] = system('hostname');
-    if strcmp(strtrim(name), 'bohigas')
-        addpath("/home/hanada/OneDrive/Packages/qtmaplab/");
-        addpath(sprintf("/home/hanada/Applications/%s",AdvanpixMCT));        
-    else
-        addpath("/nfs/qtmaplab/");
-        addpath("/nfs/AdvanpixMCT-4.8.3.14440/");
-    end
-end
+%private_addpath('AdvanpixMCT-4.8.3.14460/');
+addpath('../')
 
 
 dim = 50;
@@ -21,7 +9,6 @@ dim = 50;
 %domain = [0 2*pi;0 2*pi];
 %domain = [-pi pi;-pi pi];
 domain = [0 2*pi;-pi pi];
-
 %domain = [-2*pi 2*pi;-2*pi 2*pi];
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
@@ -30,12 +17,7 @@ T = @(x) x.^2/2;
 V = @(x) cos(x);
 matT = sH.matT(T);
 matV = sH.matV(V);
-%class(T(1))
-%assertWarningFree(@T(1))
-%assertWarningFree(T(1))
-%matT = sH.matT(T);
-%matV = sH.matV(V);
-%return 
+
 matH = matT + matV;
 [evecs, evalsmat] = eig(matH);
 [evals, sindex] = sort(real(diag(evalsmat)));
@@ -49,51 +31,70 @@ p = linspace(domain(2,1), domain(2,2), sample);
 [Q, P] = meshgrid(q, p);
 H = T(P) + V(Q);
 
-fig = figure();
-axs = [subplot(2,2,1) subplot(2,2,2) subplot(2,2,3) subplot(2,2,4) ] ;
 
+fig = figure('Position', [10 10 700 700]);
+ax1 = axes('Position',[0.1  0.55  .38 .38],'Box','on');
+ax2 = axes('Position',[0.55 0.55 .38 .38],'Box','on');
+ax3 = axes('Position',[0.1  0.09  .38 .38],'Box','on');
+ax4 = axes('Position',[0.55 0.09 .38 .38],'Box','on');
+axs = [ax1 ax2 ax3 ax4];
+%axs = [subplot(2,2,1) subplot(2,2,2) subplot(2,2,3) subplot(2,2,4) ] ;
 
 for i=1:dim
     s = states(i);     
-    
+
     for ax=axs
         hold(ax, 'on');
     end
    
-
-    plot(axs(1), s.q, log10( abs2(s.qrep() )) );
-    title( sprintf("norm=%f", norm(s.qrep())) );    
+    %%% plot axs(1); qrep
+    ax = axs(1);
+    plot(ax, s.q, log10( abs2(s.qrep() )) );
+    title(ax, sprintf("norm=%f", norm(s.qrep())) );    
+    xlabel(ax, '$q$', 'Interpreter', 'latex', 'FontSize', 15);    
+    ylabel(ax, '$|\langle q|\psi_n\rangle|^2$', 'Interpreter', 'latex', 'FontSize', 15);
     
-    scatter(axs(2), 0:dim-1, evals);
-    scatter(axs(2), i, s.eigenvalue, 100,'filled')
-    title(sprintf("%d-th eigs,E_n=%f", i, s.eigenvalue));
+    %%% plot axs(2): eigen energy
+    ax = axs(2);
+    scatter(ax, 1:dim, evals);
+    scatter(ax, i, s.eigenvalue, 100,'filled')
+    title(ax, sprintf("%d-th eigs,E_n=%f", i, s.eigenvalue));
+    xlabel(ax, '$n$', 'Interpreter', 'latex', 'FontSize', 15);
+    ylabel(ax, '$E_n$', 'Interpreter', 'latex', 'FontSize', 15);    
 
-    
-    contour(axs(3), Q, P, H, 10, 'LineColor', [0 0 0],'LineWidth', 0.5);
-    [x,y,z] = s.hsmrep(50);    
-    contour(axs(3), x, y, z, 20, 'LineColor', 'flat','LineWidth', 2);
+    %%% plot axs(3): hsmplot
+    ax = axs(3);
+    [x,y,z] = s.hsmrep('gridnum', 100);    
+    contour(ax, Q, P, H, 10, 'LineColor', [0 0 0],'LineWidth', 0.5);        
+    contour(ax, x, y, z, 10 , 'LineColor', 'none', 'Fill','on');
+    contour(ax, Q, P, H, [1 1]*s.eigenvalue, 'LineColor', [0 1 1],'LineWidth', 2);                
     zmax = max(z, [], 'all');
+    colormap(ax, flipud(hot));
+    caxis(ax, [-inf zmax]) % colorbar scale
+    cb = colorbar(ax,'westoutside');
+    cb.Position = cb.Position - [0.12, 0, 0, 0]; % position of colorbar
+    cb.Ticks=[];  % remove colorbar ticks
+    xlabel(ax, '$q$', 'Interpreter', 'latex', 'FontSize', 15);
+    ylabel(ax, '$p$', 'Interpreter', 'latex', 'FontSize', 15);    
     
-    caxis([0 zmax])
-    cb = colorbar(axs(3),'westoutside')
-    cb.Position = cb.Position - [0.12, 0, 0, 0]
-
-    plot(axs(4), log10( abs2(s.prep()) ), s.p)
-    title(sprintf("norm=%f", norm(s.prep()) ));
+    %%% plot axs(4): prep
+    ax = axs(4);
+    plot(ax, log10( abs2(s.prep()) ), s.p)
+    title(ax, sprintf("norm=%f", norm(s.prep())) );
+    xlabel(ax, '$|\langle p|\psi_n\rangle|^2$', 'Interpreter', 'latex', 'FontSize', 15);
+    ylabel(ax, '$p$', 'Interpreter', 'latex', 'FontSize', 15);        
+    
+    
     for ax=axs
         hold(ax, 'off')
     end
-    fprintf("press to the next:\n");
+    
+    fprintf("press button to the next:\n");
     waitforbuttonpress
+    
     for ax=axs
-        cla(ax);
+        colorbar('off');
+        cla(ax);        
     end
-end
-
-function y = fT(x)
-y = x.^2/2;
-end
-
-function y = fV(x)
-y = cos(x);
+    
 end
