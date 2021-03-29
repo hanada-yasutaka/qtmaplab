@@ -41,37 +41,26 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             par = inputParser;
             
             addOptional(par, 'tau', 1, @isnumeric)
-            addOptional(par, 'SIorder', 1, @(x) all(x>0 & x == floor(x)) );
-            addOptional(par, 'OPorder', 'TV', @(x) ismember(x, ["TV" "VT" "TVT" "VTV"]) );
+            addOptional(par, 'order', 1, @(x) x~=0 & x == floor(x) );
+            %addOptional(par, 'OPorder', 'TV', @(x) ismember(x, ["TV" "VT" "TVT" "VTV"]) );
             
             parse(par, varargin{:} );            
             tau     = par.Results.tau;            
-            SIorder = par.Results.SIorder;
-            OPorder = par.Results.OPorder;
+            order = par.Results.order;
+            %OPorder = par.Results.OPorder;
             
-            if strcmp(OPorder, 'TVT')
-                op = @(invec) obj.expTVTevolve(invec, funcT, funcV, tau);
-            elseif strcmp(OPorder, 'VTV')
+            if order == 1
+                op = @(invec) obj.expTVevolve(invec, funcT, funcV, tau);               
+            elseif order == -1
+                op = @(invec) obj.expVTevolve(invec, funcT, funcV, tau);
+            elseif order == 2
                 op = @(invec) obj.expVTVevolve(invec, funcT, funcV, tau);
-            elseif strcmp(OPorder, "TV")
-                if SIorder == 1
-                    op = @(invec) obj.expTVevolve(invec, funcT, funcV, tau);
-                elseif SIorder == 2
-                    op = @(invec) obj.expVTVevolve(invec, funcT, funcV, tau);
-                else
-                    error('siorder > 2 is not yes implement');
-                end
-            elseif strcmp(OPorder, "VT")
-                if SIorder == 1
-                    op = @(invec) obj.expVTevolve(invec, funcT, funcV, tau)
-                elseif SIorder == 2
-                    op = @(invec) obj.expTVTevolve(invec, funcT, funcV, tau)
-                else
-                    error('siorder > 2 is not yes implement');
-                end                              
+            elseif order == -2
+                op = @(invec) obj.expTVTevolve(invec, funcT, funcV, tau);
             else
-                error('oporder must be ''TV'' or ''VT'' ');
+                error("higher order SI is not implemented yet");
             end
+            
             info = '';
         end
         
@@ -82,45 +71,26 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             % and x = obj.basis
             par = inputParser;
             
-            addOptional(par, 'tau', 1, @isnumeric)
-            addOptional(par, 'SIorder', 1, @(x) all(x>0 & x == floor(x)) );
-            addOptional(par, 'OPorder', 'TV', @(x) ismember(x, ["TV" "VT" "TVT" "VTV"]) );
+            addOptional(par, 'tau', 1, @isnumeric);
+            addOptional(par, 'order', 1, @(x) all(x ~=0 & x == floor(x)) );
+            %addOptional(par, 'SIorder', 1, @(x) all(x>0 & x == floor(x)) );
+            %addOptional(par, 'OPorder', 'TV', @(x) ismember(x, ["TV" "VT" "TVT" "VTV"]) );
             
             parse(par, varargin{:} );            
             tau     = par.Results.tau;            
-            SIorder = par.Results.SIorder;
-            OPorder = par.Results.OPorder;
+            %SIorder = par.Results.SIorder;
+            order = par.Results.order;
             
-            
-            if strcmp(OPorder, 'TVT')
-                
-                mat = obj.expTVTmat(funcT, funcV, tau);
-                
-            elseif strcmp(OPorder, 'VTV')
-                
-                mat = obj.expVTVmat(funcT, funcV, tau);
-                
-            elseif strcmp(OPorder, 'TV')
-                if SIorder == 1
-                    
-                    mat = obj.expTVmat(funcT, funcV, tau);
-                    
-                elseif SIorder == 2
-                    
-                    mat = obj.expVTVmat(funcT, funcV, tau);
-                else
-                    error('siorder > 2 is not yes implement');
-                end
-            elseif strcmp(OPorder, "VT")
-                if SIorder == 1
-                    mat = obj.expVTmat(funcT, funcV, tau);
-                elseif SIorder == 2
-                    mat = obj.expTVTmat(funcT, funcV, tau);
-                else
-                    error('siorder > 2 is not yes implement');
-                end                              
+            if order == 1
+                mat = obj.expTVmat(funcT, funcV, tau);
+            elseif order == -1
+                mat = obj.expVTmat(funcT, funcV, tau);
+            elseif order == 2
+                mat = obj.expVTVmat(funcT, funcV, tau);                
+            elseif order == -2
+                mat = obj.expTVTmat(funcT, funcV, tau);                                
             else
-                error('oporder must be ''TV'' or ''VT'' ');
+                error('|order| > 2 are not yet implimented');
             end
             info = '';
         end
