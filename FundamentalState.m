@@ -421,3 +421,22 @@ function basisconsistency(v1, v2)
       error("basis must be same");
   end
 end
+
+function precisionWarning(args, funcname)
+format longG;
+if length(args) == 1
+    argstr = sprintf("%s", args);
+else
+    argstr = sprintf("%s", args{:});
+end
+
+msg = {"The computation precision is set as mp, but your the input arguments"
+    sprintf("%s", argstr)
+    "are double. This is not safe to keep preciison."
+    "If you want to be slient on this warning, input arguments add as"
+    sprintf("%s(..., verbose, false)", funcname)
+    };
+warning(sprintf("%s\n",msg{:}))
+end
+
+

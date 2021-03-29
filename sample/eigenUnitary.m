@@ -41,6 +41,7 @@ CSI = SimplecticIntegrator(dT, dV, 'tau', tau, 'order', siorder);
 
 [uevecs, uevals] = eig(matU);
 sindex = sortindex(uevecs, hevecs);
+
 uevecs = uevecs(:, sindex);
 uevals = diag(uevals(sindex, sindex) );
 %uevals = uevals(sindex);
