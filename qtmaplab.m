@@ -4,7 +4,7 @@ classdef qtmaplab < handle
     methods(Static)
         function Info()
             % Info displays the information of qtmaplab
-            version = "0.2";
+            version = "0.3";
             disp(version);
         end
         
