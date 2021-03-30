@@ -14,4 +14,3 @@ classdef qtmaplab < handle
         end
     end
 end
-
