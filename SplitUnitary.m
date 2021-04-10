@@ -19,6 +19,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             if strcmp(basis, 'q')
                 fprintf('Worning: basis "q" has not fully tested yet')
             end
+                        
             state = FundamentalState(obj, obj.basis);
         end
         
@@ -34,7 +35,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             sysinfo = SystemInfo(obj.dim, obj.domain, 'SplitUnitary');
             state = FundamentalState(sysinfo, basis, vec);
         end
-        
+                
         function [op, info] = SIevolve(obj, funcT, funcV, varargin)
             % return evolution operator with n-th order symplectic integrator 
             %
@@ -48,6 +49,19 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             tau     = par.Results.tau;            
             order = par.Results.order;
             %OPorder = par.Results.OPorder;
+
+            if strcmp(class(obj.domain), 'double') && strcmp(class(tau), 'mp')
+                tau = double(tau);
+                warning('tau trancated to double, because class(domain) is ''double'' ');
+            elseif strcmp(class(obj.domain), 'mp') && strcmp(class(tau), 'double')
+                msg = {
+                    "class(domain) is 'mp' but class(tau) is double," 
+                    "which means that the precision may be lost."
+                    };
+                warning(sprintf('%s\n', msg{:}));
+            end
+
+            
             
             if order == 1
                 op = @(invec) obj.expTVevolve(invec, funcT, funcV, tau);               
@@ -81,6 +95,18 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             %SIorder = par.Results.SIorder;
             order = par.Results.order;
             
+            if strcmp(class(obj.domain), 'double') && strcmp(class(tau), 'mp')
+                tau = double(tau);
+                warning('tau trancated to double, because class(domain) is ''double'' ');
+            elseif strcmp(class(obj.domain), 'mp') && strcmp(class(tau), 'double')
+                msg = {
+                    "class(domain) is 'mp' but class(tau) is double," 
+                    "which means that the precision may be lost."
+                    };
+                warning(sprintf('%s\n', msg{:}));
+            end
+            
+            
             if order == 1
                 mat = obj.expTVmat(funcT, funcV, tau);
             elseif order == -1
@@ -94,8 +120,35 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             end
             info = '';
         end
-        
-                
+
+        function index = sortbynorm(obj, targetmat, refmat)
+            arguments
+                obj
+                targetmat (:, :) {mustBeNumeric}
+                refmat    (:, :) {mustBeNumeric}
+            end
+            if size(targetmat) ~= size(refmat)
+                error("size must be same");
+            end
+
+            mat = conj(targetmat).' * refmat;
+            mat2 = conj(mat) .* mat;
+
+            dim = length(targetmat);
+            qnumber = 1:dim;
+            index = zeros(1,dim);
+            for i=1:dim
+                [~, ind] = max(mat2(:,i));
+                index(i) = qnumber(ind);
+                %index = [index, qnumber(ind)];
+                qnumber(ind) = [];
+                mat2(ind,:) = [];
+            end
+
+            if length(unique(index)) ~= dim
+                error("index is not unique");
+            end
+        end                
     end
     
     methods (Access = private)

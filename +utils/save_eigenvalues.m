@@ -1,14 +1,22 @@
-function save_eigenvalues(obj, evals, dirname, filename, trim)
-  arguments
-      obj;
-      evals {mustBeNumeric};
-      dirname = '.';
-      filename = 'eigen_evals.dat';
-      trim {mustBeInteger} = false;
-  end
+function save_eigenvalues(obj, evals, varargin)
   
-  if ~exist(dirname, 'dir')
-      mkdir(dirname);
+  par = inputParser;
+  addRequired(par, 'obj', @isobject);
+  addRequired(par, 'evals', @isnumeric);  
+            
+  addOptional(par, 'savedir', 'Data', @(x) isstring(x) | ischar(x) );
+  addOptional(par, 'filename', 'eigen_evals.dat', @(x) isstring(x) | ischar(x) );
+  addOptional(par, 'trim', false);
+            
+  parse(par, obj, evals, varargin{:} );
+  obj      = par.Results.obj;
+  evals    = par.Results.evals;
+  savedir  = par.Results.savedir;
+  filename = par.Results.filename;
+  trim     = par.Results.trim;
+  
+  if ~exist(savedir, 'dir')
+      mkdir(savedir);
   end
   
   [row, col] = size(evals);
@@ -19,17 +27,18 @@ function save_eigenvalues(obj, evals, dirname, filename, trim)
 
   dtype = class(evals);
   
-  path = strcat(dirname, '/eigen_evals.dat');
+  path = strcat(savedir, '/', filename);
   header = utils.scaleinfo2str(obj);
 
   of = fopen(path, 'w');
   fprintf(of, '%s', header);
+  fprintf(of, "# date : %s\n", date);
   fprintf(of, "# n, \treal(eval),\t imag(eval)\n");
-  data = [0:length(evals)-1; real(evals).'; imag(evals).'];  
+  data = [1:length(evals); real(evals).'; imag(evals).'];  
 
   if strcmp(dtype, 'double')
       fmt = '%d\t%.18e\t%.18e\n';      
-  elseif strcmp(dtype,'mp')
+  elseif strcmp(dtype, 'mp')
       if (~trim)
           fmt = '%d\t%s\t%s\n';
       else
@@ -38,7 +47,6 @@ function save_eigenvalues(obj, evals, dirname, filename, trim)
   else
       error("something wrong");
   end
-  
   fprintf(of, fmt, data);    
   fclose(of);
 end

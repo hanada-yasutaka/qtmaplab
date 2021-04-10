@@ -1,4 +1,4 @@
-function evalus = load_eigenvalues(path)
+function evalus = loadeigenvalues(path)
 %LOAD_EIGENVALUES この関数の概要をここに記述
 %   詳細説明をここに記述
 of = fopen(path, "r");
@@ -18,7 +18,5 @@ for i = 1:4
 end
 
 fclose(of)
-outputArg1 = inputArg1;
-outputArg2 = inputArg2;
 end
 

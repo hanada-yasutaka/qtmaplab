@@ -57,6 +57,11 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
             state = FundamentalState(sysinfo, basis, vec);
         end
         
+        function savestate(obj, evecs, varargin)
+            utils.savestate(obj, evecs, varargin);
+        end
+
+        
         
         function mat = matT(obj, funcT)
             % return <x|T(p)|x> where x is obj.basis ('q' or 'p')

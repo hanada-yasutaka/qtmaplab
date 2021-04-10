@@ -1,20 +1,21 @@
 clear all
-%private_addpath('AdvanpixMCT-4.8.3.14460/');
+private_addpath('AdvanpixMCT-4.8.3.14460/');
 %%add path of qtmaplab
-addpath('../')
+%addpath('../')
 
 dim = 100;
 %mp.Digits(150);
-%domain = [-pi pi;-pi pi];
+domain = mp('[-pi pi;-pi pi]');
 %domain = [0 2*pi;0 2*pi];
 %domain = [-2*pi 2*pi;-pi pi];
 %%domain = [0 2*pi;-pi pi];
 %domain = [-100 100;-100 100];
 %domain = mp('[-4*pi 4*pi;-15 15]');
-domain = [-pi pi;-pi pi];
+%domain = mp('[-2*pi 2*pi;-2*pi 2*pi]');
 
 k = 1;
-tau = 1;
+tau = 1 %mp('0.1');
+%tau = 0.1
 basis = 'p';
 
 T = @(x) x.^2/2;
@@ -55,7 +56,8 @@ for i=1:tmax
     traj = horzcat(traj, [q;p]);        
 end    
 
-s = state.coherent(-1, 0);
+%s = state.coherent(mp('-pi'), 0);
+s = state.coherent(-pi, 0);
 %s2 = state.coherent(mp('+pi'),mp('0'));
 %s = hstates(1);
 
@@ -81,19 +83,19 @@ for i=0:100
     
     %%% plot axs(3): hsmrep
     ax = axs(3);
-    [x,y,z] = s.hsmrep();
-    contour(ax, x, y, z, 10 , 'LineColor', 'none', 'Fill','on');
+    [x,y,z] = s.hsmrep('ismp', true);
+    contour(ax, x, y, log10(z), 10 , 'LineColor', 'none', 'Fill','on');
     d = scatter(ax, traj(1,:), traj(2,:), 1, '.');
     
     zmax = max(z, [], 'all');
     colormap(ax, flipud(hot));
-    caxis(ax, [-inf zmax]) % colorbar scale
+    caxis(ax, double([-inf zmax])) % colorbar scale
     cb = colorbar(ax,'westoutside');
     cb.Position = cb.Position - [0.12, 0, 0, 0]; % position of colorbar
     cb.Ticks=[];  % remove colorbar ticks
     xlabel(ax, '$q$', 'Interpreter', 'latex', 'FontSize', 15);
     ylabel(ax, '$p$', 'Interpreter', 'latex', 'FontSize', 15);
-    axis(ax, reshape(domain.', 1, []));
+    axis(ax, reshape(double(domain).', 1, []));
     
     %%% plot axs(4): prep
     ax = axs(4);

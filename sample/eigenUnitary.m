@@ -1,22 +1,24 @@
 clear all
-%private_addpath('AdvanpixMCT-4.8.3.14460/');
-addpath('../')
+private_addpath('AdvanpixMCT-4.8.3.14460/');
+%addpath('../')
 
 
-dim = 50;
-domain = [-pi pi;-pi pi];
+dim = 100;
+%mp.Digits(100);
+%domain = [-pi pi;-pi pi];
 %domain = [0 2*pi;0 2*pi];
 %domain = [-pi pi;-pi pi];
 %domain = [0 2*pi;-pi pi];
 
-%domain = mp('[0 2*pi;0 2*pi]');
+domain = mp('[-pi pi;-pi pi]');
+%domain = double(domain)
+%domain = mp('[-10 10;-10 10]');
 %domain = mp('[-pi pi;-pi pi]');
 %domain = [0 2*pi;0 2*pi];
 %domain = [-pi pi;-pi pi];
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
 sU = SplitUnitary(dim, domain, basis);
-
 
 T = @(x) x.^2/2;
 V = @(x) cos(x);
@@ -26,27 +28,47 @@ dV = @(x) -sin(x);
 matT = sH.matT(T);
 matV = sH.matV(V);
 
-matH = matT + matV;
-[hevecs, hevalsmat] = eig(matH);
-[hevals, sindex] = sort(real(diag(hevalsmat)));
-
-hevecs = hevecs(:, sindex);
-hstates= eigs2states(sH, hevecs, hevals);
-
 siorder = 1;
 tau = 1;
+%tau = mp('0.1');
+ss = -1i/sH.hbar * tau;
+%matH = matT + matV;
+tic 
+disp("eig Hamiltonian")
 
-matU = sU.SImatrix(T, V, 'tau', 1, 'order', siorder);
-CSI = SimplecticIntegrator(dT, dV, 'tau', tau, 'order', siorder);
+matH = matT + matV + ss/2 * (matT*matV - matV*matT);
+[hevecs, hevalsmat] = eig(matH);
+[hevals, sindex] = sort(real(diag(hevalsmat)));
+hevecs = hevecs(:, sindex);
+hstates= eigs2states(sH, hevecs, hevals);
+%utils.save_eigenvalues(sH, hevals)
+utils.savestate(sH, hstates(1), 'eigen_qrep_1.dat', 'savedir', '.');
+return 
+%utils.saveeigs(sH, hevals, hstates, 'savedir', 'Data', 'basis', 'q');
+%utils.save_eigenstates(sH, hstates, 'savedir', 'Data', 'basis', 'p');
+%return 
+toc 
+disp("const matU")
+tic
+matU = sU.SImatrix(T, V, 'tau', tau, 'order', siorder);
+toc
 
+tic
+disp("eig. matU")
 [uevecs, uevals] = eig(matU);
-sindex = sortindex(uevecs, hevecs);
+toc
 
+tic
+disp("sort matU")
+sindex = sU.sortbynorm(uevecs, hevecs);
 uevecs = uevecs(:, sindex);
 uevals = diag(uevals(sindex, sindex) );
+toc
 %uevals = uevals(sindex);
 
 ustates = eigs2states(sU, uevecs, uevals);
+
+CSI = SimplecticIntegrator(dT, dV, 'tau', double(tau), 'order', siorder);
 
 sample = 20;
 tmax = 300;
@@ -62,7 +84,7 @@ for i=1:tmax
     x = CSI.evolve(x);
     q = x(1,:);
     p = x(2,:);
-    q = q - floor((q - pi)/twopi)*twopi - twopi;
+    %q = q - floor((q - pi)/twopi)*twopi - twopi;
     traj = horzcat(traj, [q;p]);        
 end    
 
@@ -114,7 +136,7 @@ for i=1:dim
     cb.Ticks=[];  % remove colorbar ticks
     xlabel(ax, '$q$', 'Interpreter', 'latex', 'FontSize', 15);
     ylabel(ax, '$p$', 'Interpreter', 'latex', 'FontSize', 15);        
-    axis(ax, reshape(domain.', 1, []));
+    axis(ax, reshape(double(domain).', 1, []));
     
     %%% plot axs(4): prep
     ax = axs(4);

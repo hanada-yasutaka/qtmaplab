@@ -31,13 +31,13 @@ classdef SimplecticIntegrator < handle
             %obj.tau = 1;
             %obj.evolve = @(q, p) evo
             if order == 1
-                obj.evolve = @(x) obj.evolveQP(x)
+                obj.evolve = @(x) obj.evolveQP(x);
             elseif order == -1
-                obj.evolve = @(x) obj.evolvePQ(x)                                
+                obj.evolve = @(x) obj.evolvePQ(x);                               
             elseif order == 2
-                obj.evolve = @(x) obj.evolvePQP(x)                
+                obj.evolve = @(x) obj.evolvePQP(x);                
             elseif order == -2
-                obj.evolve = @(x) obj.evolveQPQ(x)                
+                obj.evolve = @(x) obj.evolveQPQ(x);               
 
             end
             

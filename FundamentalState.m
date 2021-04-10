@@ -186,15 +186,15 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             y = norm( obj.y );
         end
         
-        function display(obj)
+        %function display(obj)
             % overload built-in display function to display <x|¥psi>
-            display( obj.y )
-        end
+        %    display( obj.y )
+        %end
         
-        function disp(obj)
+        %function disp(obj)
             %overload built-in disp function to display <x|¥psi>            
-            disp( obj.y );
-        end
+        %    disp( obj.y );
+        %end
         
         function info(obj)
             builtin('display', obj);
@@ -352,14 +352,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                 warning('%s\n', msg{:});
             end
             obj = FundamentalState(obj.sysinfo, obj.basis, y);            
-        end
-
-        
-        function save_state()
-        end
-        
-        function save_eigs()
-        end
+        end               
         
     end
 end
