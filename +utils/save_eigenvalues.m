@@ -4,9 +4,10 @@ function save_eigenvalues(obj, evals, varargin)
   addRequired(par, 'obj', @isobject);
   addRequired(par, 'evals', @isnumeric);  
             
-  addOptional(par, 'savedir', 'Data', @(x) isstring(x) | ischar(x) );
-  addOptional(par, 'filename', 'eigen_evals.dat', @(x) isstring(x) | ischar(x) );
-  addOptional(par, 'trim', false);
+  addParameter(par, 'savedir', 'Data', @(x) isstring(x) | ischar(x) );
+  addParameter(par, 'filename', 'eigen_evals.dat', @(x) isstring(x) | ischar(x) );
+  addParameter(par, 'varbose', true );  
+  addParameter(par, 'trim', false);
             
   parse(par, obj, evals, varargin{:} );
   obj      = par.Results.obj;
@@ -14,7 +15,8 @@ function save_eigenvalues(obj, evals, varargin)
   savedir  = par.Results.savedir;
   filename = par.Results.filename;
   trim     = par.Results.trim;
-  
+  varbose  = par.Results.varbose;
+    
   if ~exist(savedir, 'dir')
       mkdir(savedir);
   end
@@ -49,6 +51,9 @@ function save_eigenvalues(obj, evals, varargin)
   end
   fprintf(of, fmt, data);    
   fclose(of);
+  if varbose
+      fprintf('save: %s\n', path);
+  end
 end
 
 

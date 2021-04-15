@@ -43,7 +43,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         function obj = double(obj)
             % truncate to double 
             sysinfo = SystemInfo(obj.dim, double(obj.domain) );
-            obj = FundamentalState(sysinfo, obj.basis, double(obj.y));            
+            obj = FundamentalState(sysinfo, obj.basis, double(obj.y), double(obj.eigenvalue));            
         end
         
         function obj = q2p(obj)
@@ -53,8 +53,8 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             else
                 vec = fft(obj.y);
             end
-            
-            obj = FundamentalState(obj.sysinfo, 'p', vec/sqrt(obj.dim));
+                        
+            obj = FundamentalState(obj.sysinfo, 'p', vec/sqrt(obj.dim), obj.eigenvalue);
         end
         
         function obj = p2q(obj)
@@ -66,7 +66,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
 
             end
             %vec = ifft(obj.y);                
-            obj = FundamentalState(obj.sysinfo, 'q', vec*sqrt(obj.dim));
+            obj = FundamentalState(obj.sysinfo, 'q', vec*sqrt(obj.dim), obj.eigenvalue);
         end
         
         function obj = qrep(obj)
@@ -140,18 +140,10 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                 end                
             else
                 x = double(obj.q);              
-                %x = linspace(double(vrange(1,1)), double(vrange(1,2)), obj.dim);
                 v = double(v);
-                vrange = double(vrange);
-                
+                vrange = double(vrange);                
                 hbar = double(obj.hbar);
-                
-                %dq = double( ( vrange(1,1) - vrange(1,2) )/ gridnum(1) );
-                %dp = double( ( vrange(2,1) - vrange(2,2) )/ gridnum(2) );               
-                
-                %qc = vrange(1,1): dq : vrange(1,2);
-                %pc = vrange(2,1): dp : vrange(2,2);               
-                
+                                
                 qc = linspace(vrange(1,1), vrange(1,2), gridnum(1));
                 pc = linspace(vrange(2,1), vrange(2,2), gridnum(2));
                 

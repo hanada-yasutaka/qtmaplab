@@ -11,7 +11,7 @@ dim = 100;
 %domain = [0 2*pi;-pi pi];
 
 domain = mp('[-pi pi;-pi pi]');
-%domain = double(domain)
+domain = double(domain)
 %domain = mp('[-10 10;-10 10]');
 %domain = mp('[-pi pi;-pi pi]');
 %domain = [0 2*pi;0 2*pi];
@@ -41,9 +41,12 @@ matH = matT + matV + ss/2 * (matT*matV - matV*matT);
 [hevals, sindex] = sort(real(diag(hevalsmat)));
 hevecs = hevecs(:, sindex);
 hstates= eigs2states(sH, hevecs, hevals);
+%saveobj(hstates(1), 'abc.mat')
+utils.saveeigs(sH, hevals, hstates, 'basis', 'q', 'header', 'ham', 'savedir', 'Data');
+return
 %utils.save_eigenvalues(sH, hevals)
-utils.savestate(sH, hstates(1), 'eigen_qrep_1.dat', 'savedir', '.');
-return 
+%utils.savestate(sH, hstates(1), 'eigen_qrep_1.dat', 'savedir', '.');
+%return 
 %utils.saveeigs(sH, hevals, hstates, 'savedir', 'Data', 'basis', 'q');
 %utils.save_eigenstates(sH, hstates, 'savedir', 'Data', 'basis', 'p');
 %return 

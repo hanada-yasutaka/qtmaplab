@@ -7,29 +7,32 @@ function savestate(obj, state, filename, varargin)
   addRequired(par, 'state', @(x) isa(x,'FundamentalState'));  
   addRequired(par, 'filename', @(x) isstring(x) | ischar(x) );
             
-  addOptional(par, 'savedir', 'Data') %@(x) isstring(x) | ischar(x) );
-  addOptional(par, 'trim', false);
-  addOptional(par, 'basis', obj.basis, @(x) isstring(x) | ischar(x) );    
+  addParameter(par, 'savedir', 'Data'); %@(x) isstring(x) | ischar(x) );
+  addParameter(par, 'trim', false);
+  addParameter(par, 'basis', obj.basis, @(x) isstring(x) | ischar(x) );    
+  addParameter(par, 'varbose', true, @islogical );      
             
   parse(par, obj, state, filename, varargin{:} );
   state    = par.Results.state;
-  savedir  = par.Results.savedir;
   filename = par.Results.filename;
+  savedir  = par.Results.savedir;
   trim     = par.Results.trim;
   basis    = par.Results.basis;
+  varbose  = par.Results.varbose;
   
   if ~exist(savedir, 'dir')
       mkdir(savedir);
   end
-  
-  dtype = class(state.dtype);
+
+  %dtype = class(state.dtype);
   
   path = strcat(savedir, '/', filename);
   header = utils.scaleinfo2str(obj);
-
   of = fopen(path, 'w');
-  fprintf(of, '%s', header);
 
+  
+  fprintf(of, '%s', header);
+  
   if strcmp(obj.dtype, 'mp')
       fprintf(of, '# eigenvalue = %s\n', state.eigenvalue);
   else
@@ -52,4 +55,7 @@ function savestate(obj, state, filename, varargin)
   end
   fprintf(of, fmt, data);    
   fclose(of);
+  if varbose
+      fprintf('save: %s\n', path);
+  end  
 end
