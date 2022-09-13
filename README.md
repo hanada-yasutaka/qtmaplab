@@ -1,6 +1,6 @@
 # qtmaplab
 
-Version 0.3
+Version 0.4
 
 There are no documents in Github still yet.
 Please check/run a few codes in the "samples" directory.
