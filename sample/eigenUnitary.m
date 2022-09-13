@@ -1,21 +1,11 @@
 clear all
-private_addpath('AdvanpixMCT-4.8.3.14460/');
-%addpath('../')
+private_addpath('Advanpix');
 
-
-dim = 100;
-%mp.Digits(100);
-%domain = [-pi pi;-pi pi];
-%domain = [0 2*pi;0 2*pi];
-%domain = [-pi pi;-pi pi];
-%domain = [0 2*pi;-pi pi];
+dim = 50; %mp.Digits(100);
 
 domain = mp('[-pi pi;-pi pi]');
 domain = double(domain)
-%domain = mp('[-10 10;-10 10]');
-%domain = mp('[-pi pi;-pi pi]');
-%domain = [0 2*pi;0 2*pi];
-%domain = [-pi pi;-pi pi];
+
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
 sU = SplitUnitary(dim, domain, basis);
@@ -29,27 +19,21 @@ matT = sH.matT(T);
 matV = sH.matV(V);
 
 siorder = 1;
-tau = 1;
-%tau = mp('0.1');
-ss = -1i/sH.hbar * tau;
-%matH = matT + matV;
+tau = mp('1');
+
+
 tic 
 disp("eig Hamiltonian")
-
-matH = matT + matV + ss/2 * (matT*matV - matV*matT);
+s = -1i/sH.hbar * tau;
+%matH = matT + matV;
+matH = matT + matV + s/2 * (matT*matV - matV*matT);
 [hevecs, hevalsmat] = eig(matH);
 [hevals, sindex] = sort(real(diag(hevalsmat)));
 hevecs = hevecs(:, sindex);
 hstates= eigs2states(sH, hevecs, hevals);
-%saveobj(hstates(1), 'abc.mat')
+saveobj(hstates(1), 'abc.mat')
 utils.saveeigs(sH, hevals, hstates, 'basis', 'q', 'header', 'ham', 'savedir', 'Data');
-return
-%utils.save_eigenvalues(sH, hevals)
-%utils.savestate(sH, hstates(1), 'eigen_qrep_1.dat', 'savedir', '.');
-%return 
-%utils.saveeigs(sH, hevals, hstates, 'savedir', 'Data', 'basis', 'q');
-%utils.save_eigenstates(sH, hstates, 'savedir', 'Data', 'basis', 'p');
-%return 
+
 toc 
 disp("const matU")
 tic
@@ -67,9 +51,10 @@ sindex = sU.sortbynorm(uevecs, hevecs);
 uevecs = uevecs(:, sindex);
 uevals = diag(uevals(sindex, sindex) );
 toc
-%uevals = uevals(sindex);
 
 ustates = eigs2states(sU, uevecs, uevals);
+utils.saveeigs(sU, uevals, ustates, 'basis', 'q', 'header', 'uni', 'savedir', 'Data');
+
 
 CSI = SimplecticIntegrator(dT, dV, 'tau', double(tau), 'order', siorder);
 

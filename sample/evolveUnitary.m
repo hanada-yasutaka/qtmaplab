@@ -1,20 +1,13 @@
 clear all
-private_addpath('AdvanpixMCT-4.8.3.14460/');
-%%add path of qtmaplab
-%addpath('../')
+private_addpath('Advanpix/');
 
 dim = 100;
 %mp.Digits(150);
 domain = mp('[-pi pi;-pi pi]');
-%domain = [0 2*pi;0 2*pi];
-%domain = [-2*pi 2*pi;-pi pi];
-%%domain = [0 2*pi;-pi pi];
-%domain = [-100 100;-100 100];
-%domain = mp('[-4*pi 4*pi;-15 15]');
-%domain = mp('[-2*pi 2*pi;-2*pi 2*pi]');
+%domain = [0 pi;0 pi];
 
 k = 1;
-tau = 1 %mp('0.1');
+tau = 1; %mp('0.1');
 %tau = 0.1
 basis = 'p';
 
@@ -30,9 +23,9 @@ QSIevolve = sU.SIevolve(T, V, 'tau', tau, 'order', siorder);
 CSI = SimplecticIntegrator(dT, dV, 'tau', tau, 'order', siorder)
 
 
-%matT = sH.matT(T);
-%matV = sH.matV(V);
-%matH = matT + matV;
+matT = sH.matT(T);
+matV = sH.matV(V);
+matH = matT + matV;
 %[hevecs, hevalsmat] = eig(matH);
 %[hevals, sindex] = sort(real(diag(hevalsmat)));
 %hevecs = hevecs(:, sindex);
@@ -56,7 +49,6 @@ for i=1:tmax
     traj = horzcat(traj, [q;p]);        
 end    
 
-%s = state.coherent(mp('-pi'), 0);
 s = state.coherent(-pi, 0);
 %s2 = state.coherent(mp('+pi'),mp('0'));
 %s = hstates(1);
@@ -118,6 +110,7 @@ for i=0:100
         cla(ax);
     end
     
+    utils.savestate(sH, s, sprintf('evolve_t%d.dat', i), 'basis', 'q', 'savedir', 'Data');    
     s = QSIevolve(s);
 end
 

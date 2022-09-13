@@ -1,15 +1,9 @@
 clear all
-%private_addpath('AdvanpixMCT-4.8.3.14460/');
-addpath('../')
-
+private_addpath('Advanpix');
 
 dim = 50;
 %domain = mp('[-pi pi;-2*pi 2*pi]');
-%domain = [-pi pi;0 2*pi];
-%domain = [0 2*pi;0 2*pi];
-%domain = [-pi pi;-pi pi];
 domain = [-pi pi;-pi pi];
-%domain = [-2*pi 2*pi;-2*pi 2*pi];
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
 
@@ -19,11 +13,15 @@ matT = sH.matT(T);
 matV = sH.matV(V);
 
 matH = matT + matV;
+
 [evecs, evalsmat] = eig(matH);
 [evals, sindex] = sort(real(diag(evalsmat)));
 
 evecs = evecs(:,sindex);
 states = eigs2states(sH, evecs, evals);
+utils.saveeigs(sH, evals, states, 'basis', 'q', 'header', 'ham', 'savedir', 'Data');
+%save 'Data/matH.mat' matH;
+%save 'Data/states.mat' states;
 
 sample = 100;
 q = linspace(domain(1,1), domain(1,2), sample);
@@ -38,7 +36,6 @@ ax2 = axes('Position',[0.55 0.55 .38 .38],'Box','on');
 ax3 = axes('Position',[0.1  0.09  .38 .38],'Box','on');
 ax4 = axes('Position',[0.55 0.09 .38 .38],'Box','on');
 axs = [ax1 ax2 ax3 ax4];
-%axs = [subplot(2,2,1) subplot(2,2,2) subplot(2,2,3) subplot(2,2,4) ] ;
 
 for i=1:dim
     s = states(i);     
@@ -89,7 +86,7 @@ for i=1:dim
         hold(ax, 'off')
     end
     
-    fprintf("press button to the next:\n");
+    fprintf("press/click to the next:\n");
     waitforbuttonpress
     
     for ax=axs

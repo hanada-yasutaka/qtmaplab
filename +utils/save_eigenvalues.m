@@ -31,8 +31,9 @@ function save_eigenvalues(obj, evals, varargin)
   
   path = strcat(savedir, '/', filename);
   header = utils.scaleinfo2str(obj);
-
+  
   of = fopen(path, 'w');
+  
   fprintf(of, '%s', header);
   fprintf(of, "# date : %s\n", date);
   fprintf(of, "# n, \treal(eval),\t imag(eval)\n");
