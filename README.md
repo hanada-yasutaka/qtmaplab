@@ -2,10 +2,8 @@
 
 Version 0.4
 
-There are no documents in Github still yet.
-Please check/run a few codes in the "samples" directory.
-
-You may find a few documents by using "doc" or "help" MATLAB commands, but you can see the code by using "edit" command.
+There are no documents yet. Please check/run codes in the "samples" directory.
+You may find few documents by using "doc" or "help" MATLAB commands, and you can see the code by using "edit" command.
 
 
 
