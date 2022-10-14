@@ -4,6 +4,7 @@ private_addpath('Advanpix');
 dim = 50; %mp.Digits(100);
 
 domain = mp('[-pi pi;-pi pi]');
+%domain = double(domain);
 
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
@@ -19,6 +20,7 @@ matV = sH.matV(V);
 
 siorder = 1;
 tau = mp('1');
+%tau = 1;
 
 tic 
 disp("eig Hamiltonian")
