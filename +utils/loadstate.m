@@ -4,6 +4,6 @@ function state = loadstate(path)
    data = utils.readdata(path, [dim, 4]);
    sysinfo = SystemInfo(dim, domain);
    vec = data(:,3) + 1i*data(:,4);
-   state = FundamentalState(sysinfo, basis, vec, eval);
+   state = State(sysinfo, basis, vec, eval);
 end
 

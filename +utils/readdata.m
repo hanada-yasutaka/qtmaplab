@@ -1,5 +1,9 @@
 function data = readdata(path, dsize)
 
+if ~isfile(path)
+    error('%s is not found', path); 
+end
+
 of = fopen(path);
 
 line = fgetl(of);

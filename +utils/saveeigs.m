@@ -2,7 +2,7 @@ function saveeigs(obj, evals, states, varargin)
     par = inputParser;
     addRequired(par, 'obj', @isobject);
     addRequired(par, 'evals', @isnumeric);    
-    addRequired(par, 'states', @(x) isnumeric(x) | isa(x, 'FundamentalState') );    
+    addRequired(par, 'states', @(x) isnumeric(x) | isa(x, 'State') );    
     %parse(par, obj, evals,states);
     %obj = par.Results.obj;
     
@@ -19,7 +19,7 @@ function saveeigs(obj, evals, states, varargin)
     trim = par.Results.trim;
     varbose = par.Results.varbose;
     
-    if ~isa(states, 'FundamentalState')
+    if ~isa(states, 'State')
         states = eigs2states(obj, evals, states);
     end
     

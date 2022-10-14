@@ -4,13 +4,13 @@ classdef qtmaplab < handle
     methods(Static)
         function Info()
             % Info displays the information of qtmaplab
-            version = "0.3";
+            version = "0.5";
             disp(version);
         end
         
         function Test()
             % Test runs the UnitTests
-            runtests("+UnitTest/TestFundamentalState.m")            
+            runtests("+UnitTest/TestState.m")            
         end
     end
 end

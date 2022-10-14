@@ -20,7 +20,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
                 fprintf('Worning: basis "q" has not fully tested yet')
             end
                         
-            state = FundamentalState(obj, obj.basis);
+            state = State(obj, obj.basis);
         end
         
         function state = vec2state(obj, vec, basis)
@@ -33,7 +33,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             end
 
             sysinfo = SystemInfo(obj.dim, obj.domain, 'SplitUnitary');
-            state = FundamentalState(sysinfo, basis, vec);
+            state = State(sysinfo, basis, vec);
         end
                 
         function [op, info] = SIevolve(obj, funcT, funcV, varargin)
@@ -300,7 +300,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             expT = op_expT(obj, funcT, tau);
             expV = op_expV(obj, funcV, tau);
             
-            if isa(invec, 'FundamentalState')
+            if isa(invec, 'State')
                 dtypecmp(obj, invec.y);                                               
                                 
                 if strcmp(invec.basis, 'q')
@@ -337,7 +337,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             expT = op_expT(obj, funcT, tau);
             expV = op_expV(obj, funcV, tau);
             
-            if isa(invec, 'FundamentalState')                
+            if isa(invec, 'State')                
                 dtypecmp(obj, invec.y);
                 
                 if strcmp(invec.basis, 'p')
@@ -373,7 +373,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             expT = op_expT(obj, funcT, tau);
             expV = op_expV(obj, funcV, tau/2);
             
-            if isa(invec, 'FundamentalState')
+            if isa(invec, 'State')
                 dtypecmp(obj, invec.y);                                               
                                 
                 if strcmp(invec.basis, 'q')
@@ -412,7 +412,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             expT = op_expT(obj, funcT, tau/2);
             expV = op_expV(obj, funcV, tau);
             
-            if isa(invec, 'FundamentalState')                
+            if isa(invec, 'State')                
                 dtypecmp(obj, invec.y);
                 
                 if strcmp(invec.basis, 'p')
@@ -546,7 +546,7 @@ function dtypecmp(obj, vec)
 end
 
 %function vec = expT4vec(obj, funcT, invec)
-%if class(invec) == 'FundamentalState'
+%if class(invec) == 'State'
 %    invec = invec.prep();
 %    invec = invec.y;
 %end
@@ -555,7 +555,7 @@ end
 
 %function vec = expV4vec(obj, funcV, invec)
 
-%if class(invec) == 'FundamentalState'
+%if class(invec) == 'State'
 %    invec = invec.qrep();
 %    invec = invec.y;
 %end

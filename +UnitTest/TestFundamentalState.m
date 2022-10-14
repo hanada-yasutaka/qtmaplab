@@ -1,4 +1,4 @@
-classdef TestFundamentalState < matlab.unittest.TestCase
+classdef TestState < matlab.unittest.TestCase
 
     properties
         fig
@@ -20,7 +20,7 @@ classdef TestFundamentalState < matlab.unittest.TestCase
             end
 
             obj.sysinfo = UnitTest.set_test_system();
-            obj.state = FundamentalState(obj.sysinfo, obj.basis);
+            obj.state = State(obj.sysinfo, obj.basis);
             
         end
     end
@@ -38,8 +38,8 @@ classdef TestFundamentalState < matlab.unittest.TestCase
             dim = obj.sysinfo.dim;
             v1 = rand(dim, 1) + 1j * rand(dim, 1);
             v2 = rand(dim, 1) + 1j * rand(dim, 1);
-            s1 = FundamentalState(obj.sysinfo, obj.basis, v1);
-            s2 = FundamentalState(obj.sysinfo, obj.basis, v2);
+            s1 = State(obj.sysinfo, obj.basis, v1);
+            s2 = State(obj.sysinfo, obj.basis, v2);
             tol = 1e-15;
             
             s = s1 + s2;
@@ -55,7 +55,7 @@ classdef TestFundamentalState < matlab.unittest.TestCase
         function inner(obj)
             dim = obj.sysinfo.dim;
             v1 = rand(dim, 1) + 1j * rand(dim, 1);
-            s1 = FundamentalState(obj.sysinfo, obj.basis, v1);
+            s1 = State(obj.sysinfo, obj.basis, v1);
             s1 = s1.normalize();
             a = inner(s1, s1);
             tol = 1e-15;
@@ -66,7 +66,7 @@ classdef TestFundamentalState < matlab.unittest.TestCase
             dim = obj.sysinfo.dim;            
             v1 = rand(dim, 1) + 1j * rand(dim, 1);
             a = rand(1);
-            s1 = FundamentalState(obj.sysinfo, obj.basis, v1);
+            s1 = State(obj.sysinfo, obj.basis, v1);
             s = s1/a;
             tol = 1e-15;
             assertEqual(obj, s.y, v1 / a, 'AbsTol', tol);

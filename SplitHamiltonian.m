@@ -40,11 +40,11 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
             if strcmp(basis, 'q')
                 fprintf('Worning: basis "q" has not fully tested yet')
             end
-            state = FundamentalState(obj, obj.basis);            
+            state = State(obj, obj.basis);            
         end
         
         function state = vec2state(obj, vec, basis)
-            % create FundamentalState from vector array
+            % create State from vector array
             if isrow(vec)
                 vec = vec.';
             end
@@ -54,7 +54,7 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
             end
 
             sysinfo = SystemInfo(obj.dim, obj.domain, 'SplitHamiltonian');
-            state = FundamentalState(sysinfo, basis, vec);
+            state = State(sysinfo, basis, vec);
         end
         
         function savestate(obj, evecs, varargin)
@@ -103,7 +103,7 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
         %function state = nullstate(obj)
         %    system = SystemInfo(obj.dim, obj.domain, class(obj) );            
         %    y = zeros(1, obj.dim, class(obj.domain));
-        %    state = FundamentalState(system, obj.basis, y);            
+        %    state = State(system, obj.basis, y);            
         %end                     
     end
     

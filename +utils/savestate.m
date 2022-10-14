@@ -4,7 +4,7 @@ function savestate(obj, state, filename, varargin)
   parse(par, obj);
   obj = par.Results.obj;
   
-  addRequired(par, 'state', @(x) isa(x,'FundamentalState'));  
+  addRequired(par, 'state', @(x) isa(x,'State'));  
   addRequired(par, 'filename', @(x) isstring(x) | ischar(x) );
             
   addParameter(par, 'savedir', 'Data'); %@(x) isstring(x) | ischar(x) );
