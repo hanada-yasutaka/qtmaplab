@@ -1,7 +1,7 @@
 clear all
 private_addpath('Advanpix');
 
-dim = 50;
+dim = 10;
 %domain = mp('[-pi pi;-2*pi 2*pi]');
 domain = [-pi pi;-pi pi];
 basis = 'p';
@@ -61,10 +61,12 @@ for i=1:dim
 
     %%% plot axs(3): hsmplot
     ax = axs(3);
-    [x,y,z] = s.hsmrep('gridnum', 100);    
+    [x,y,z] = s.hsmrep('gridnum', 200, 'periodic', true, 'ismp', false);    
     contour(ax, Q, P, H, 10, 'LineColor', [0 0 0],'LineWidth', 0.5);        
     contour(ax, x, y, z, 10 , 'LineColor', 'none', 'Fill','on');
     contour(ax, Q, P, H, [1 1]*s.eigenvalue, 'LineColor', [0 1 1],'LineWidth', 2);                
+    class(H)
+    [1 1]*s.eigenvalue
     zmax = max(z, [], 'all');
     colormap(ax, flipud(hot));
     caxis(ax, [-inf zmax]) % colorbar scale

@@ -39,6 +39,7 @@ function savestate(obj, state, filename, varargin)
       fprintf(of, '# eigenvalue = %.18e\n', state.eigenvalue);
   end
   fprintf(of, '# basis = ''%s''\n', basis);
+  fprintf(of, '# date : %s\n', date);
   fprintf(of, '# x,\t|<x|psi>|^2,\tRe[<x|psi>],\tIm[<x|psi>]\n');
   data = [state.x.'; abs2(state.y).'; real(state.y).'; imag(state.y).'];  
 

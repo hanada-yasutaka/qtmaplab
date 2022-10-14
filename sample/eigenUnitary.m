@@ -4,7 +4,6 @@ private_addpath('Advanpix');
 dim = 50; %mp.Digits(100);
 
 domain = mp('[-pi pi;-pi pi]');
-domain = double(domain)
 
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
@@ -21,7 +20,6 @@ matV = sH.matV(V);
 siorder = 1;
 tau = mp('1');
 
-
 tic 
 disp("eig Hamiltonian")
 s = -1i/sH.hbar * tau;
@@ -31,7 +29,7 @@ matH = matT + matV + s/2 * (matT*matV - matV*matT);
 [hevals, sindex] = sort(real(diag(hevalsmat)));
 hevecs = hevecs(:, sindex);
 hstates= eigs2states(sH, hevecs, hevals);
-saveobj(hstates(1), 'abc.mat')
+%saveobj(hstates(1), 'abc.mat')
 utils.saveeigs(sH, hevals, hstates, 'basis', 'q', 'header', 'ham', 'savedir', 'Data');
 
 toc 

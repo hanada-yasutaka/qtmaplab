@@ -4,7 +4,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         sysinfo % instance of the class SystemInfo        
         basis {mustBeMember(basis,{'q','p'})} = 'p' % basis (representation) of wavefunction                 
         x % coordinate: $q$ or $p$
-        y (:,1) {mustBeNumeric} = [] % <x|¥psi> where x is $q$ or $p$
+        y (:,1) {mustBeNumeric} = [] % wavefunction <x|¥psi> where x is $q$ or $p$-representation
         eigenvalue {mustBeNumeric} = NaN % eigenvalue data        
     end
     
@@ -95,11 +95,13 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             addOptional(par, 'gridnum',       50 )%, @(x) all(x>0 & x == floor(x)) );
             addOptional(par, 'vrange', obj.domain)%, @(x) isnumeric(x) & all(size(x) == [2 2], 'all') );
             addOptional(par, 'ismp',       false )%, @islogical);
+            addOptional(par, 'periodic',       false)%, @islogical);            
                                         
             parse(par, varargin{:} );
             vrange  = par.Results.vrange;
             gridnum  = par.Results.gridnum;                                   
             ismp = par.Results.ismp;
+            periodic = par.Results.periodic;
             
             assert(vrange(1,2) > vrange(1,1), 'vrange(1,1) >= vrange(1,2)');
             assert(vrange(2,2) > vrange(2,1), 'vrange(2,1) >= vrange(2,2)');
@@ -120,6 +122,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             
             if ismp
                 x = obj.q;
+                hbar = obj.hbar;
                 if ~strcmp( class(vrange), 'mp')
                     msg = {"The computation precision is set as mp, but your the input arguments"
                         sprintf("vrange are %s", class(vrange))
@@ -127,13 +130,12 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                         };
                     warning(sprintf("%s\n",msg{:}))
                 end
-                hbar = obj.hbar;
-                qc = linspace(vrange(2,1), vrange(2,2), gridnum(1));
-                pc = linspace(vrange(2,1), vrange(2,2), gridnum(2));
+                qc = linspace(vrange(1,1), vrange(1,2), gridnum(1) );
+                pc = linspace(vrange(2,1), vrange(2,2), gridnum(2) );
                 
                 [X,Y] = meshgrid(qc,pc);              
                 mat = zeros(gridnum(1), gridnum(2), class(v));
-                if obj.periodic
+                if periodic
                     csfun = @(qc, pc) csp(x, hbar, obj.domain(1,:), qc, pc, 5);
                 else
                     csfun = @(qc, pc)  cs(x, hbar, qc, pc);
@@ -146,6 +148,12 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
                                 
                 qc = linspace(vrange(1,1), vrange(1,2), gridnum(1));
                 pc = linspace(vrange(2,1), vrange(2,2), gridnum(2));
+
+                %dq = (vrange(1,2) - vrange(1,1))/gridnum(1);
+                %dp = (vrange(2,2) - vrange(2,1))/gridnum(2);
+                %qc = vrange(1,1): dq: vrange(1,2) - dq;
+                %pc = vrange(2,1): dp: vrange(2,2) - dp;       
+                
                 
                 [X,Y] = meshgrid(qc, pc);
                 mat = zeros(gridnum(1), gridnum(2), 'double');
@@ -214,7 +222,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
         end
                     
         function scalar = inner(v1, vm)
-            % return < v1 | vm > if ins isvector
+            % return < v1 | vm > if vm isvector
             % if vm is matrix such that
             % vm = [a, b, c, ...]
             % then inner returns vector for the inner product
@@ -229,7 +237,7 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             elseif ismatrix(vm)
                 scalar = conj(v1.y).' * vm;
             else
-                error("mv must be vector or matrix");
+                error("vm must be vector or matrix");
             end
         end
         
@@ -271,9 +279,8 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
             addRequired(par, 'qc',  @isreal);
             addRequired(par, 'pc',  @isreal);
 
-            default = true;
-            addOptional(par,'periodic', default, @islogical);
-            addOptional(par,'verbose',  default, @islogical);
+            addOptional(par,'periodic', true, @islogical);
+            addOptional(par,'verbose',  false, @islogical);
             pnum = 5;
             addOptional(par,'pnum',  pnum, @(x) x>0 & x==floor(x) );
                         
@@ -350,6 +357,9 @@ classdef FundamentalState < matlab.mixin.SetGet & SystemInfo
 end
 
 function y = cs(x, hbar, qc, pc)
+  % coherent state centered $(q, p)=(q_c, pc)$
+  % $psi(x) = (pi\hbar)^{-1/4} exp( - (x - xc)/(2*hbar) + i*pc*x/hbar)$
+  %
   arguments
       x {mustBeNumeric};      
       hbar {mustBeReal};
@@ -359,10 +369,13 @@ function y = cs(x, hbar, qc, pc)
   if isrow(x)
       x = x.';
   end  
-  y = exp( -(x - qc) .^ 2 /(2 * hbar) + 1j*(x - qc) * pc / hbar);
+  y = exp( -(x - qc) .^ 2 /(2*hbar) + 1j* x  * pc / hbar);
 end
 
 function y = csp(x, hbar, qdomain, qc, pc, partition)
+  % coherent state centered $(q, p)=(q_c, pc)$ imposed periodic boundary condition (numerically).
+  % $psi(x) = (pi\hbar)^{-1/4} exp( - (x - xc)/(2*hbar) + i*pc*x/hbar)$
+  %
   arguments
       x {mustBeNumeric};
       hbar {mustBeReal};

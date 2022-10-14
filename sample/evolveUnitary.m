@@ -49,7 +49,7 @@ for i=1:tmax
     traj = horzcat(traj, [q;p]);        
 end    
 
-s = state.coherent(-pi, 0);
+s = state.coherent(0, 0);
 %s2 = state.coherent(mp('+pi'),mp('0'));
 %s = hstates(1);
 
@@ -75,7 +75,7 @@ for i=0:100
     
     %%% plot axs(3): hsmrep
     ax = axs(3);
-    [x,y,z] = s.hsmrep('ismp', true);
+    [x,y,z] = s.hsmrep('ismp', false, 'periodic', true);
     contour(ax, x, y, log10(z), 10 , 'LineColor', 'none', 'Fill','on');
     d = scatter(ax, traj(1,:), traj(2,:), 1, '.');
     

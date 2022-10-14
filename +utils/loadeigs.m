@@ -1,7 +1,18 @@
-function [outputArg1,outputArg2] = loadeigs(inputArg1,inputArg2)
+function states = loadeigs(flist)
 %LOADEIGS この関数の概要をここに記述
 %   詳細説明をここに記述
-outputArg1 = inputArg1;
-outputArg2 = inputArg2;
+    [~, reindex] = sort( str2double( regexp( {flist.name}, '\d+', 'match', 'once' )));
+    list = flist(reindex);
+    path = sprintf("%s/%s", list(1).folder, list(1).name);
+    [dtype, dim, domain, hbar, basis, eval] = utils.readheader(path);
+    states = [];
+    sysinfo = SystemInfo(dim, domain);
+    for i = 1:length(list)
+        path = sprintf("%s/%s", list(i).folder, list(i).name);
+        data = utils.readdata(path, [dim, 4]);
+        vec = data(:,3) + 1i*data(:,4);
+        s = FundamentalState(sysinfo, basis, vec, eval);
+        states = [states; s];
+    end
 end
 
