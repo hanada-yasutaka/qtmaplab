@@ -1,12 +1,13 @@
 clear all
-private_addpath('Advanpix');
+%private_addpath('Advanpix');
+addpath('/Users/hanada/Dropbox/Packages/qtmaplab/');
 
 dim = 50; %mp.Digits(100);
 
-domain = mp('[-pi pi;-pi pi]');
-%domain = double(domain);
+%domain = mp('[-pi pi;-pi pi]');
+domain = [0 2*pi; -1/2*pi 1/2*pi]
 
-basis = 'p';
+basis = 'q';
 sH = SplitHamiltonian(dim, domain, basis);
 sU = SplitUnitary(dim, domain, basis);
 
@@ -19,8 +20,8 @@ matT = sH.matT(T);
 matV = sH.matV(V);
 
 siorder = 1;
-tau = mp('1');
-%tau = 1;
+%tau = mp('1');
+tau = 1;
 
 tic 
 disp("eig Hamiltonian")
@@ -113,12 +114,14 @@ for i=1:dim
     
     %%% plot axs(3): hsmplot
     ax = axs(3);
-    [x,y,z] = s.hsmrep();
+    ds = double(s);
+    [x,y,z] = ds.hsmrep('periodic', true);
     contour(ax, x, y, z, 10 , 'LineColor', 'none', 'Fill','on');
+    
     d = scatter(ax, traj(1,:), traj(2,:), 1, '.');%, 'MarkerSize', 1, 'Marker', 'o')    
     zmax = max(z, [], 'all');
     colormap(ax, flipud(hot));
-    caxis(ax, [-inf zmax]) % colorbar scale
+    %caxis(ax, [-inf zmax]) % colorbar scale
     cb = colorbar(ax,'westoutside');
     cb.Position = cb.Position - [0.12, 0, 0, 0]; % position of colorbar
     cb.Ticks=[];  % remove colorbar ticks

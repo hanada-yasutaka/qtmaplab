@@ -2,8 +2,8 @@ clear all
 private_addpath('Advanpix');
 
 dim = 10;
-%domain = mp('[-pi pi;-2*pi 2*pi]');
-domain = [-pi pi;-pi pi];
+domain = mp('[-pi pi;-2*pi 2*pi]');
+%domain = [-pi pi;-pi pi];
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
 
@@ -61,7 +61,7 @@ for i=1:dim
 
     %%% plot axs(3): hsmplot
     ax = axs(3);
-    [x,y,z] = s.hsmrep('gridnum', 200, 'periodic', true, 'ismp', false);    
+    [x,y,z] = s.hsmrep('gridnum', 50, 'periodic', true);    
     contour(ax, Q, P, H, 10, 'LineColor', [0 0 0],'LineWidth', 0.5);        
     contour(ax, x, y, z, 10 , 'LineColor', 'none', 'Fill','on');
     contour(ax, Q, P, H, [1 1]*s.eigenvalue, 'LineColor', [0 1 1],'LineWidth', 2);                
@@ -69,7 +69,7 @@ for i=1:dim
     [1 1]*s.eigenvalue
     zmax = max(z, [], 'all');
     colormap(ax, flipud(hot));
-    caxis(ax, [-inf zmax]) % colorbar scale
+    caxis(ax, [-inf double(zmax)]) % colorbar scale
     cb = colorbar(ax,'westoutside');
     cb.Position = cb.Position - [0.12, 0, 0, 0]; % position of colorbar
     cb.Ticks=[];  % remove colorbar ticks

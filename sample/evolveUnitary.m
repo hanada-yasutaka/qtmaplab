@@ -1,15 +1,16 @@
 clear all
-private_addpath('Advanpix/');
+%private_addpath('Advanpix/');
+addpath('/Users/hanada/Dropbox/Packages/qtmaplab/');
 
 dim = 100;
 %mp.Digits(150);
-domain = mp('[-pi pi;-pi pi]');
-%domain = [0 pi;0 pi];
+%domain = mp('[-pi pi;-pi pi]');
+domain = [0 2*pi;0 pi];
 
 k = 1;
 tau = 1; %mp('0.1');
 %tau = 0.1
-basis = 'p';
+basis = 'q';
 
 T = @(x) x.^2/2;
 V = @(x) cos(x);
@@ -75,7 +76,7 @@ for i=0:100
     
     %%% plot axs(3): hsmrep
     ax = axs(3);
-    [x,y,z] = s.hsmrep('ismp', false, 'periodic', true);
+    [x,y,z] = s.hsmrep('periodic', true);
     contour(ax, x, y, log10(z), 10 , 'LineColor', 'none', 'Fill','on');
     d = scatter(ax, traj(1,:), traj(2,:), 1, '.');
     
@@ -112,5 +113,6 @@ for i=0:100
     
     utils.savestate(sH, s, sprintf('evolve_t%d.dat', i), 'basis', 'q', 'savedir', 'Data');    
     s = QSIevolve(s);
+    disp(s.norm());
 end
 

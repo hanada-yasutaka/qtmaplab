@@ -3,7 +3,7 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
     % 
     % $H(p,q) = T(p) + V(q)$ 
     %
-    % by using fundamental basis ('q' or 'p').
+    % by using position or momemtum basis: $<x_n|x_m>=δ_{nm}$ where 'x' is 'q' or 'p'.
     %
     % Example:
     %
@@ -11,9 +11,9 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
     %     domain = [-pi pi; -pi pi];         % or mp('[-pi pi; -pi pi'])
     %     basis = 'p';                       % or 'p'
     %     sH = SplitHamiltonian(dim, domain, basis);
-    %     matT = sH.matT(@(x) x.^2/2);       %<p'|T(p)|p> where T(p) = p^2/2
-    %     matV = sH.matV(@(x) cos(x));       %<p'|V(p)|p> where V(q) = cos(q)
-    %     matH = matT + matV;                %<p'|H|p>
+    %     matT = sH.matT(@(x) x.^2/2);       % <p'|T(p)|p> where T(p) = p^2/2
+    %     matV = sH.matV(@(x) cos(x));       % <p'|V(p)|p> where V(q) = cos(q)
+    %     matH = matT + matV;                % <p'|H|p>
     %
     % or 
     %
@@ -61,8 +61,7 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
             utils.savestate(obj, evecs, varargin);
         end
 
-        
-        
+               
         function mat = matT(obj, funcT)
             % return <x|T(p)|x> where x is obj.basis ('q' or 'p')
             msg = {'argument must be function_handle'
@@ -153,8 +152,6 @@ classdef SplitHamiltonian < matlab.mixin.SetGet & SystemInfo
             qvecs = funcT(x)  .* fft(qvecs);
             mat = ifft(qvecs);
         end
-
-
     end
 end
 

@@ -208,7 +208,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             mat  = expT(pvecs);
             
             if strcmp(obj.basis, 'q')
-                mat = fft(mat);
+                mat = fft(mat)/obj.dim;
             end                        
         end
         
@@ -225,7 +225,7 @@ classdef SplitUnitary  < matlab.mixin.SetGet & SystemInfo
             
             iden = diag( ones(1, obj.dim, class(obj.domain) ) );
             if strcmp(obj.basis, 'q')                              
-                iden = fft(iden);
+                iden = fft(iden)/obj.dim;
             end
             
             pvecs = ifft( expT(iden ) );
