@@ -1,6 +1,6 @@
 clear all
 %private_addpath('Advanpix');
-addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+addpath("../"); %% path to qtmaplab
 %addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
 k = (15/16)^2; % 任意精度計算の場合はmpで評価してください

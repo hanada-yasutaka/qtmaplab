@@ -1,9 +1,9 @@
 clear all
 %private_addpath('Advanpix');
-addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+addpath("../"); %% path to qtmaplab
 %addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
-dim = 10;
+dim = 50;
 %mp.Digits(150); % 仮数部の桁数
 %domain = mp('[-pi pi;-pi pi]');
 domain = [-pi pi;-pi pi];

@@ -1,11 +1,11 @@
 clear all
 %private_addpath('Advanpix');
-addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+addpath("../"); %% path to qtmaplab
 %addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
-dim = 10;
-domain = mp('[-pi pi;-2*pi 2*pi]');
-%domain = [-pi pi;-pi pi];
+dim = 50;
+%domain = mp('[-pi pi;-2*pi 2*pi]');
+domain = [-pi pi;-pi pi];
 basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
 

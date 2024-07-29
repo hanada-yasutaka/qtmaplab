@@ -1,10 +1,10 @@
 clear all
 %private_addpath('Advanpix');
-addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+addpath("../"); %% path to qtmaplab
 %addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
-domain = mp('[-2*pi 2*pi;-2*pi 2*pi]');
-%domain = [-2*pi 2*pi;-2*pi 2*pi];
+%domain = mp('[-2*pi 2*pi;-2*pi 2*pi]');
+domain = [-2*pi 2*pi;-2*pi 2*pi];
 basis = 'p';
 
 T = @(x) x.^2/2;
