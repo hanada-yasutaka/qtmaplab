@@ -4,11 +4,8 @@ function private_addpath(AdvanpixMCT)
         addpath(sprintf('/Users/hanada/Applications/%s',AdvanpixMCT));
     elseif isunix
         [~, name] = system('hostname');
-        if strcmp(strtrim(name), 'bohigas')
-            addpath('/home/hanada/Dropbox/Packages/qtmaplab/');
-            addpath(sprintf('/home/hanada/Applications/%s',AdvanpixMCT));
         else
-            addpath('/nfs/qtmaplab/');
+            addpath('/nfs/Dropbox/Packages/qtmaplab/');
             addpath(sprintf('/nfs/%s', AdvanpixMCT));
         end
     end
