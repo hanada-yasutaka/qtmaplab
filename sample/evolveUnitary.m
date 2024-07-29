@@ -1,16 +1,17 @@
 clear all
-%private_addpath('Advanpix/');
-addpath('/Users/hanada/Dropbox/Packages/qtmaplab/');
+%private_addpath('Advanpix');
+addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+%addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
-dim = 100;
-%mp.Digits(150);
+dim = 10;
+%mp.Digits(150); % 仮数部の桁数
 %domain = mp('[-pi pi;-pi pi]');
-domain = [0 2*pi;0 pi];
+domain = [-pi pi;-pi pi];
 
 k = 1;
-tau = 1; %mp('0.1');
-%tau = 0.1
-basis = 'q';
+tau = 1; % 任意精度計算の場合はmpで評価してください
+%tau = mp('1')
+basis = 'p';
 
 T = @(x) x.^2/2;
 V = @(x) cos(x);

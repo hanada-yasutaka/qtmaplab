@@ -1,13 +1,15 @@
 clear all
 %private_addpath('Advanpix');
-addpath('/Users/hanada/Dropbox/Packages/qtmaplab/');
+addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+%addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
-dim = 50; %mp.Digits(100);
+%mp.Digits(100); % 仮数部の桁数
+dim = 50; 
 
 %domain = mp('[-pi pi;-pi pi]');
 domain = [0 2*pi; -1/2*pi 1/2*pi]
 
-basis = 'q';
+basis = 'p';
 sH = SplitHamiltonian(dim, domain, basis);
 sU = SplitUnitary(dim, domain, basis);
 

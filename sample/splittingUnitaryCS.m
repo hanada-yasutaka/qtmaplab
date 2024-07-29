@@ -1,20 +1,15 @@
 clear all
 %private_addpath('Advanpix');
-addpath("~/Dropbox/Packages/qtmaplab/");
-%addpath('/nfs/qtmaplab/') %% path to qtmaplab
+addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
 %addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
-%mp.Test()
-%return 
-k = (15/16)^2;
+k = (15/16)^2; % 任意精度計算の場合はmpで評価してください
 T = @(x) x.^2/2;
 V = @(x) k*cos(x);
 dT = @(x) x;
 dV = @(x) -k*sin(x);
 
-%mp.Digits(32); % 任意精度の仮数部の桁数
-
-domain = [-2*pi 2*pi;-pi pi];
+domain = [-2*pi 2*pi;-pi pi]; % 任意精度計算の場合はmpで評価してください
 
 basis = 'p';
 

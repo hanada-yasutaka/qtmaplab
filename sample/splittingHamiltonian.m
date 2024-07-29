@@ -1,12 +1,7 @@
 clear all
-
-if ismac
-    addpath("/Users/hanada/OneDrive/Packages/qtmaplab/");
-    addpath("/Users/hanada/Applications/AdvanpixMCT-4.8.3.14460/");
-elseif isunix
-    addpath("/nfs/qtmaplab/");
-    addpath("/nfs/AdvanpixMCT-4.8.3.14440/");
-end
+%private_addpath('Advanpix');
+addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+%addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
 domain = mp('[-2*pi 2*pi;-2*pi 2*pi]');
 %domain = [-2*pi 2*pi;-2*pi 2*pi];

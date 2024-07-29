@@ -1,7 +1,7 @@
 clear all
-private_addpath('AdvanpixMCT-4.8.3.14460/');
-%%add path of qtmaplabA
-%addpath('../')
+%private_addpath('Advanpix');
+addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+%addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
 %dim = 120;
 dim = 500;

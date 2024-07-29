@@ -1,5 +1,7 @@
 clear all
-private_addpath('Advanpix');
+%private_addpath('Advanpix');
+addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+%addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
 dim = 50;
 %domain = mp('[-pi pi;-pi pi]');

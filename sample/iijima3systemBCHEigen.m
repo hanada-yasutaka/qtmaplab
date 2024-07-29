@@ -1,7 +1,7 @@
 clear all
-private_addpath('Advanpix');
-%%add path of qtmaplabA
-%addpath('../')
+%private_addpath('Advanpix');
+addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+%addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
 
 %%% system setting 
