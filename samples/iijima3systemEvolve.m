@@ -1,18 +1,12 @@
 clear all
 %private_addpath('Advanpix');
-addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+addpath("../"); %% path to qtmaplab
 %addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
 dim = 1200;
-mp.Digits(150);
-%domain = [-pi pi;-pi pi];
-%domain = [0 2*pi;0 2*pi];
-%domain = [-2*pi 2*pi;-pi pi];
-%%domain = [0 2*pi;-pi pi];
-%domain = [-100 100;-100 100];
-domain = mp('[-4*pi 4*pi;-15 15]');
-%domain = double(domain);
-%domain = [-pi pi;-pi pi];
+%mp.Digits(150);
+%domain = mp('[-4*pi 4*pi;-15 15]');
+domain = [-4*pi 4*pi;-15 15];
 
 %k = 1;
 %tau = 1;
@@ -26,7 +20,8 @@ dV = @(x) x + 2*sin(x);
 sH = SplitHamiltonian(dim, domain, basis);
 [sU, state] = SplitUnitary(dim, domain, basis);
 siorder = -1;
-tau = mp('-0.3');
+%tau = mp('-0.3');
+tau = -0.3;
 QSIevolve = sU.SIevolve(T, V, 'tau', tau, 'order', siorder);
 CSI = SimplecticIntegrator(dT, dV, 'tau', tau, 'order', siorder);
 sU.hbar

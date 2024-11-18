@@ -1,19 +1,13 @@
 clear all
 %private_addpath('Advanpix');
-addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+addpath("../"); %% path to qtmaplab
 %addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
 %dim = 120;
 dim = 500;
 %mp.Digits(150);
-%domain = [-pi pi;-pi pi];
-%domain = [0 2*pi;0 2*pi];
-%domain = [-2*pi 2*pi;-pi pi];
-%%domain = [0 2*pi;-pi pi];
-%domain = [-100 100;-100 100];
-domain = mp('[-4*pi 4*pi;-15 15]');
-%domain = double(domain);
-%domain = [-pi pi;-pi pi];
+%domain = mp('[-4*pi 4*pi;-15 15]');
+domain = [-4*pi 4*pi;-15 15];
 
 %k = 1;
 %tau = 1;
@@ -25,8 +19,8 @@ dT = @(x) x;
 dV = @(x) x + 2*sin(x);
 
 siorder = -1;
-tau = mp('-0.3');
-%tau = 0.3
+%tau = mp('-0.3');
+tau = 0.3
 
 sH = SplitHamiltonian(dim, domain, basis);
 matT = sH.matT(T);
@@ -92,7 +86,7 @@ for i=1:dim
     %%% plot axs(1): qrep
     ax = axs(1);
     plot(ax, s.q, log10(abs2( s.qrep() )), '-', 'LineWidth', 3)
-    title(ax, sprintf("norm=%f, n=%d iter.", norm(s.qrep()), i ));
+    title(ax, sprintf("norm=%f, n=%d-th eig.", norm(s.qrep()), i ));
     xlabel(ax, '$q$', 'Interpreter', 'latex', 'FontSize', 15);
     ylabel(ax, '$|\langle q|\psi_n\rangle|^2$', 'Interpreter', 'latex', 'FontSize', 15);
     

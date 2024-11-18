@@ -1,6 +1,6 @@
 clear all
 %private_addpath('Advanpix');
-addpath("~/Dropbox/Packages/qtmaplab/"); %% path to qtmaplab
+addpath("../"); %% path to qtmaplab
 %addpath('~/Applications/Advanpix/') %% path to Advanpix for multiple precision arthmetics
 
 
@@ -50,7 +50,7 @@ hstates = eigs2states(sH, hevecs, hevecs);
 
 %%%% quantum map %%%%
 [sU, state] = SplitUnitary(dim, domain, basis);
-siorder = 1;
+siorder = -1;
 %QSIevolve = sU.SIevolve(T, V, 'tau', tau, 'order', siorder);
 matU = sU.SImatrix(T, V, 'tau', tau, 'order', siorder);
 [uevecs, uevals] = eig(matU);
@@ -105,13 +105,13 @@ for i=1:dim
     ax = axs(1);
     plot(ax, sh.q, log10(abs2( sh.qrep() )), '-', 'LineWidth', 3)
     plot(ax, su.q, log10(abs2( su.qrep() )), '-', 'LineWidth', 3)    
-    title(ax, sprintf("norm=%f, n=%d iter.", norm(s.qrep()), i ));
+    title(ax, sprintf("norm=%f, n=%d-th eig.", norm(su.qrep()), i ));
     xlabel(ax, '$q$', 'Interpreter', 'latex', 'FontSize', 15);
     ylabel(ax, '$|\langle q|\psi_n\rangle|^2$', 'Interpreter', 'latex', 'FontSize', 15);
     
     %%% plot axs(3): hsmrep
     ax = axs(3);
-    [x,y,z] = sh.hsmrep();
+    [x,y,z] = su.hsmrep();
     contour(ax, x, y, z, 10 , 'LineColor', 'none', 'Fill','on');
     d = scatter(ax, traj(1,:), traj(2,:), 1, '.');
     
@@ -130,14 +130,20 @@ for i=1:dim
     ax = axs(4);
     plot(ax, log10(abs2( sh.prep() )), sh.p, '-','LineWidth', 3)
     plot(ax, log10(abs2( su.prep() )), su.p, '-','LineWidth', 3)    
-    title(ax, sprintf("norm=%f", norm(s.prep()) ))
+    title(ax, sprintf("norm=%f", norm(su.prep()) ))
     xlabel(ax, '$|\langle p|\psi_n\rangle|^2$', 'Interpreter', 'latex', 'FontSize', 15);
     ylabel(ax, '$p$', 'Interpreter', 'latex', 'FontSize', 15);
     
     linkaxes([axs(1),axs(3)], 'x');
     linkaxes([axs(3),axs(4)], 'y');
     %fprintf("%d\n", i);
+    
+    savedir="test";    
+    if ~exist(savedir, 'dir')
+       mkdir(savedir);
+    end
     saveas(gcf, sprintf("test/test_%d.png", i));
+    
     for ax=axs
         hold(ax, 'off')
     end
